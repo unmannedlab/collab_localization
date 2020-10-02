@@ -1,0 +1,202 @@
+#!/usr/bin/env python3
+
+import rospy
+import math
+import numpy as np
+import message_filters
+import tf
+import utm
+
+from geometry_msgs.msg  import Point, Pose2D, Quaternion, Vector3, PoseStamped
+from pacmod_msgs.msg    import VehicleSpeedRpt, SystemRptFloat
+from nav_msgs.msg       import Odometry, Path
+from vn300.msg          import gps, ins, sensors
+from decawave_ros.msg   import uwb_distance
+
+np.set_printoptions(linewidth=160)
+
+class golfcart_ekf:
+
+    def __init__(self):
+
+        rospy.init_node('golfcart_ekf')
+        # Parameters
+        self.L = 3.404
+        self.SR = 22.17
+
+        # Vectornav Subscribers
+        self.vn300_imu_sub      = rospy.Subscriber('/vectornav/ins', ins, self.update_ins)
+
+        # Synchronized Pacmod Subscribers
+        self.pacmod_speed_sub   = message_filters.Subscriber('/parsed_tx/vehicle_speed_rpt', VehicleSpeedRpt)
+        self.pacmod_steer_sub   = message_filters.Subscriber('/parsed_tx/steer_rpt',         SystemRptFloat)
+        ts = message_filters.ApproximateTimeSynchronizer([self.pacmod_speed_sub, self.pacmod_steer_sub], 10, 0.03)
+        ts.registerCallback(self.update_pacmod)
+
+        # State Publisher
+        self.state_pub = rospy.Publisher('golfcart_ekf/state', Odometry, queue_size=10)
+
+        self.br = tf.TransformBroadcaster()
+
+        self.state_odom = Odometry()
+        self.state_odom.header.frame_id = 'UTM'
+        self.state_odom.child_frame_id  = 'golfcart_state'
+
+        self.time = rospy.rostime.Time()
+        self.time_init = False
+        self.accel_time = rospy.rostime.Time()
+        self.accel_time_init = False
+
+        self.state = np.zeros([6,1])
+        
+        self.state_init = False
+        self.ins_cnt = 10
+        self.UTM_0 = np.array([0, 0])
+
+        self.Q = np.zeros([6,6])
+        np.fill_diagonal( self.Q, [0.01, 0.01, 0.01, 0.001, 0.001, 0.001] ) # states for IMU is [x,y,theta,vx,vy,omega]
+
+        self.state_cov = self.Q
+        
+        self.R_ins = np.zeros([5,5])
+        np.fill_diagonal( self.R_ins, [0.6, 0.6, 0.08, 0.08, 0.2] )
+
+        self.R_pcm = np.zeros([3,3])
+        np.fill_diagonal( self.R_pcm, [0.05, 0.07, 0.01])
+
+        self.anc_offsets = np.array([[ 0.591, 0.165, 1.90], [-0.591, -1.823, 1.90]])
+        self.R_uwb = np.array([[0.3]])
+
+        home_utm =utm.from_latlon(30.673794, -96.374043)
+        self.UTM_0 = np.array([home_utm[0], home_utm[1]])
+
+
+    def predict(self, time):
+        dt = 1/50
+        F = np.identity(6)
+        F[0,3] = dt 
+        F[1,4] = dt 
+        F[2,5] = dt
+        
+        self.state = np.matmul(F, self.state) 
+        self.state[2] = (self.state[2][0] + math.pi) % (2* math.pi) - math.pi # wrap to 2pi
+    
+        # P_k|k-1 = F_k * P_k-1|k-1 * F_k^T + Q_k
+        self.state_cov = np.matmul(F, np.matmul(self.state_cov, F.T)) + self.Q
+
+
+    def update_ins(self, msg):
+        self.predict( msg.header.stamp.to_sec() )
+
+        if self.state_init:
+            
+            pos_utm = utm.from_latlon(msg.LLA.x, msg.LLA.y)
+
+            z = np.array([  [pos_utm[0]], \
+                            [pos_utm[1]], \
+                            [(msg.RPY.z-90) / 180 * math.pi], \
+                            [msg.NedVel.x], \
+                            [msg.NedVel.y]])
+            
+            z[2] = (z[2][0] + math.pi) % (2* math.pi) - math.pi # wrap to 2pi
+
+            np.fill_diagonal( self.R_ins, [msg.PosUncertainty, msg.PosUncertainty, msg.YawUncertainty, msg.VelUncertainty, msg.VelUncertainty] )
+
+            self.H_ins = np.zeros([5,6])
+            self.H_ins[0,0] = 1.0
+            self.H_ins[1,1] = 1.0
+            self.H_ins[2,2] = 1.0
+            self.H_ins[3,3] = 1.0
+            self.H_ins[4,4] = 1.0
+
+            # y_k       = z_k - h(xhat_k|k-1)
+            self.y_ins = z - self.state[0:5]
+            
+            # S_k       = H_k * P_k|k-1 * H_k^T + R_kError
+            self.S_ins = np.matmul(self.H_ins, np.matmul(self.state_cov, self.H_ins.T)) + self.R_ins 
+            
+            # K_k       = P_k|k-1 * H_k^T * S_k^-1
+            self.K_ins = np.matmul(self.state_cov, np.matmul(self.H_ins.T, np.linalg.inv(self.S_ins)))
+            
+            # xhat_k|k  = xhat_k|k-1 + K_k * y_k
+            self.state = self.state + np.matmul(self.K_ins, self.y_ins)
+            self.state[2] = (self.state[2][0] + math.pi) % (2* math.pi) - math.pi # wrap to 2pi
+            
+            # P_k|k     = (I - K_k * H_k) * P_k|k-1
+            self.state_cov = np.matmul((np.eye(6) - np.matmul(self.K_ins, self.H_ins)), self.state_cov)
+
+        elif self.ins_cnt > 0:
+            pos_utm = utm.from_latlon(msg.LLA.x, msg.LLA.y)
+
+            self.state[0] = pos_utm[0]
+            self.state[1] = pos_utm[1]
+            self.state[2] = (90-msg.RPY.z) / 180 * math.pi + 0.05
+            self.state_init = True
+            self.ins_cnt = self.ins_cnt - 1
+
+
+    def update_pacmod(self, speed_msg, steer_msg):
+        
+        z = np.array([  [speed_msg.vehicle_speed * math.cos(self.state[2])] , \
+                        [speed_msg.vehicle_speed * math.sin(self.state[2])] , \
+                        [speed_msg.vehicle_speed / self.L * math.tan(steer_msg.output / self.SR) ] ])
+
+        self.H_pcm = np.zeros([3,6])
+        self.H_pcm[0,3] = 1.0
+        self.H_pcm[1,4] = 1.0
+        self.H_pcm[2,5] = 1.0
+
+        # y_k       = z_k - h(xhat_k|k-1)
+        self.y_pcm = z - self.state[3:6]
+
+        # # S_k       = H_k * P_k|k-1 * H_k^T + R_kError
+        self.S_pcm = np.matmul(self.H_pcm, np.matmul(self.state_cov, self.H_pcm.T)) + self.R_pcm 
+
+        # # K_k       = P_k|k-1 * H_k^T * S_k^-1
+        self.K_pcm = np.matmul(self.state_cov, np.matmul(self.H_pcm.T, np.linalg.inv(self.S_pcm)))
+
+        # # xhat_k|k  = xhat_k|k-1 + K_k * y_k
+        self.state = self.state + np.matmul(self.K_pcm, self.y_pcm)
+        self.state[2] = (self.state[2][0] + math.pi) % (2* math.pi) - math.pi # wrap to 2pi
+
+        # # P_k|k     = (I - K_k * H_k) * P_k|k-1
+        self.state_cov = np.matmul((np.eye(6) - np.matmul(self.K_pcm, self.H_pcm)), self.state_cov)
+
+
+    def run(self):
+        rate = rospy.Rate(100) # 100 Hz
+        while(not rospy.is_shutdown()):
+            if self.state_init: 
+
+                quat = tf.transformations.quaternion_from_euler(0,0,-self.state[2])
+                self.state_odom.header.stamp = rospy.Time.now()
+                self.state_odom.pose.pose.position = Point(self.state[0],self.state[1],0)
+                self.state_odom.pose.pose.orientation = Quaternion(quat[0], quat[1], quat[2], -quat[3])
+                self.state_odom.pose.covariance = self.state_cov[0:6,0:6].flatten()
+                
+                self.state_odom.twist.twist.linear = Vector3(self.state[3],self.state[4],0)
+                self.state_odom.twist.twist.angular = Vector3(0,0,self.state[5])
+                self.state_odom.twist.covariance = self.state_cov[0:6,0:6].flatten()
+
+                self.state_pub.publish( self.state_odom )
+                
+                self.br.sendTransform( ( self.state[0], self.state[1], 0.0),
+                    (0.0, 0.0, 0.0, 1.0),
+                    rospy.Time.now(),
+                    'golfcart_state',
+                    'UTM')
+                
+
+                self.br.sendTransform(  (self.UTM_0[0], self.UTM_0[1], 0.0),
+                    (0.0, 0.0, 0.0, 1.0),
+                    rospy.Time.now(),
+                    'local',
+                    'UTM')
+            
+            rate.sleep()
+
+
+
+if __name__ == '__main__':
+    golfcart_ekf = golfcart_ekf()
+    golfcart_ekf.run()

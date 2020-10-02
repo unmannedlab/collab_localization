@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+
+import rospy
+import utm 
+import tf 
+
+from sensor_msgs.msg    import NavSatFix 
+from ubxtranslator.msg  import hpposllh
+
+
+class RSat:
+    def __init__(self):
+
+        rospy.init_node('rviz_sat')
+
+        self.UBX_llh_sub = rospy.Subscriber('/UBX/hpposllh', hpposllh, self.convert, queue_size=10)
+        self.nav_sat_pub = rospy.Publisher('/collab_ekf/rviz_sat', NavSatFix, latch=True, queue_size=10)
+        self.nav_sat = NavSatFix()
+        self.nav_sat.header.frame_id = 'local'
+        self.br = tf.TransformBroadcaster()
+
+
+    def convert(self, msg):
+        self.nav_sat.header.seq: 999
+        self.nav_sat.header.stamp = rospy.Time.now()
+        self.nav_sat.status.service = 0
+        self.nav_sat.status.service = 1
+
+        self.nav_sat.latitude  =  30.673794 #msg.llh.lat
+        self.nav_sat.longitude = -96.374041 #msg.llh.lon
+        self.nav_sat.altitude  =  0 #msg.llh.height
+        self.nav_sat.position_covariance: [3.9561210000000004, 0.0, 0.0, 0.0, 3.9561210000000004, 0.0, 0.0, 0.0, 7.650756]
+        self.nav_sat.position_covariance_type: 2
+
+
+    def run(self):
+        rate = rospy.Rate(1.0/5) # 
+        while(not rospy.is_shutdown()):
+            self.nav_sat_pub.publish(self.nav_sat)
+            rate.sleep()
+
+
+if __name__ == '__main__':
+    rviz_sat = RSat()
+    rviz_sat.run()
+
+
+
+
+
+

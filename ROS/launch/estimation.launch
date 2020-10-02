@@ -1,0 +1,15 @@
+<launch>
+
+	<node name="golfcart_ckf"		pkg="collab_localization" type="golfcart_ckf" 	output="screen"/>
+	<node name="golfcart_ekf"		pkg="collab_localization" type="golfcart_ekf" 	output="screen"/>
+	
+	<node name="odom_to_path" 	pkg="collab_localization" type="odom_to_path" 	output="screen"/>
+	<node name="rviz_sat" 		pkg="collab_localization" type="rviz_sat" 		output="screen"/>
+
+	<node pkg="tf2_ros" type="static_transform_publisher" name="map_to_local" args="0 0 0 0.018 0 0 local map" />
+	<node pkg="tf2_ros" type="static_transform_publisher" name="UTM_to_local" args="751581.90 3396393.33 0 0 0 0 UTM local" />
+
+	<node pkg="rosbag" type="play" name="player" args="--clock -r 3 $(find collab_localization)/bags/Aug_31/16.bag"/>
+  	<param name="/run" type="int" value="16"/>
+
+</launch>

@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+
+import numpy as np
+import rospy
+import math
+import utm 
+import tf
+
+from geometry_msgs.msg  import PoseStamped, Point
+from nav_msgs.msg       import Odometry, Path
+from ubxtranslator.msg  import hpposllh
+
+
+class OdomToPath:
+    def __init__(self):
+        self.ckf_sub = rospy.Subscriber('/golfcart_ckf/state',  Odometry,   self.ckf_state, queue_size=10)
+        self.ckf_pub = rospy.Publisher( '/golfcart_ckf/path',   Path,       latch=True,     queue_size=10)
+        self.ekf_sub = rospy.Subscriber('/golfcart_ekf/state',  Odometry,   self.ekf_state, queue_size=10)
+        self.ekf_pub = rospy.Publisher( '/golfcart_ekf/path',   Path,       latch=True,     queue_size=10)
+
+        self.rtk_sub = rospy.Subscriber('/UBX/hpposllh', hpposllh, self.rtk_state, queue_size=10)
+        self.rtk_pub = rospy.Publisher('/golfcart/rtk_path', Path, latch=True, queue_size=10)
+
+        self.cur_pose = PoseStamped()
+        self.ckf_path = Path()
+        self.ekf_path = Path()
+        self.rtk_path = Path()
+        self.rtk_path.header.frame_id = 'UTM'
+
+        self.run = rospy.get_param("/run")
+
+        self.rtk_off = np.array([[0.591],[-0.794]])
+
+
+    def ckf_state(self, msg):
+        if len(self.ckf_path.poses) == 0:
+            ckf_state = PoseStamped()
+            ckf_state.header = msg.header
+            ckf_state.pose = msg.pose.pose
+            self.ckf_state = ckf_state
+
+            self.ckf_path.header = msg.header
+            self.ckf_path.header.stamp = rospy.Time.now()
+            self.ckf_path.poses.append(ckf_state)
+            self.ckf_pub.publish(self.ckf_path)
+
+        elif msg.pose.pose != self.ckf_path.poses[-1].pose:
+            ckf_state = PoseStamped()
+            ckf_state.header = msg.header
+            ckf_state.pose = msg.pose.pose
+            self.ckf_state = ckf_state
+
+            self.ckf_path.header = msg.header
+            self.ckf_path.header.stamp = rospy.Time.now()
+            self.ckf_path.poses.append(ckf_state)
+            self.ckf_pub.publish(self.ckf_path)
+
+
+    def ekf_state(self, msg):
+        if len(self.ekf_path.poses) == 0:
+            ekf_state = PoseStamped()
+            ekf_state.header = msg.header
+            ekf_state.pose = msg.pose.pose
+            self.ekf_state = ekf_state
+
+            self.ekf_path.header = msg.header
+            self.ekf_path.header.stamp = rospy.Time.now()
+            self.ekf_path.poses.append(ekf_state)
+            self.ekf_pub.publish(self.ekf_path)
+
+        elif msg.pose.pose != self.ekf_path.poses[-1].pose:
+            ekf_state = PoseStamped()
+            ekf_state.header = msg.header
+            ekf_state.pose = msg.pose.pose
+            self.ekf_state = ekf_state
+
+            self.ekf_path.header = msg.header
+            self.ekf_path.header.stamp = rospy.Time.now()
+            self.ekf_path.poses.append(ekf_state)
+            self.ekf_pub.publish(self.ekf_path)
+
+
+    def rtk_state(self, msg):
+        pos_utm = utm.from_latlon(msg.llh.lat, msg.llh.lon)
+        q = self.cur_pose.pose.orientation
+        ang = tf.transformations.euler_from_quaternion((q.x, q.y, q.z, q.w))[2] + math.pi/2
+        R = np.array([[math.cos(ang), -math.sin(ang)],[math.sin(ang), math.cos(ang)]])
+        
+        b = np.matmul(R, self.rtk_off)
+        
+        cur_pose = PoseStamped()
+        cur_pose.header.frame_id = 'UTM'
+        cur_pose.header.stamp = rospy.Time.now()
+        cur_pose.pose.position = Point(pos_utm[0] - b[0], pos_utm[1] - b[1], 0)
+        
+        self.rtk_path.header.stamp = rospy.Time.now()
+        self.rtk_path.poses.append(cur_pose)
+        self.rtk_pub.publish(self.rtk_path)
+
+
+if __name__ == '__main__':
+    rospy.init_node('odom_to_path')
+    odom_to_path = OdomToPath()
+    rospy.spin()
