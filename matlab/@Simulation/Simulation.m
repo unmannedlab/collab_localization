@@ -17,7 +17,7 @@ classdef Simulation < handle
             p = inputParser;
             addRequired(p,'scene')
             addOptional(p,'plot_fig', true);
-            addOptional(p,'kf_switch', [1,1,1]);
+            addOptional(p,'kf_switch', [1,1,1,1]);
             parse(p,varargin{:});
             
             obj.plot_fig  = p.Results.plot_fig;

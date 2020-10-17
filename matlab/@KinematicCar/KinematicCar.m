@@ -42,6 +42,11 @@ classdef KinematicCar < handle
         ckf_sigma
         ckf_init 
         
+        dcl_x
+        dcl_Sigma
+        dcl_sigma
+        dcl_init 
+        
         uwb
         anchors
         tags
@@ -64,6 +69,7 @@ classdef KinematicCar < handle
         kf_mdl = true;
         kf_gps = true;
         kf_uwb = true;
+        kf_dcl = true;
     end
     
     
@@ -83,6 +89,7 @@ classdef KinematicCar < handle
             obj.kf_mdl = p.Results.kf_switch(1);
             obj.kf_gps = p.Results.kf_switch(2);
             obj.kf_uwb = p.Results.kf_switch(3);
+            obj.kf_dcl = p.Results.kf_switch(4);
             
             if p.Results.perfect
                 obj.gps_cep = 1e-12;
@@ -126,6 +133,15 @@ classdef KinematicCar < handle
             n = (obj.car_num-1)*6+1;
             obj.ckf_Sigma(n:n+5,n:n+5) = obj.ekf_cov;
             obj.ckf_init = false(obj.nCars,1);
+            
+            
+            obj.dcl_x   = obj.ekf_x;
+            obj.dcl_sigma = repmat(eye(6),[obj.nCars,1]);
+            obj.dcl_Sigma = zeros(obj.nCars*6);
+            n = (obj.car_num-1)*6+1;
+            obj.dcl_Sigma(n:n+5,n:n+5) = obj.ekf_cov;
+            obj.dcl_init = false(obj.nCars,1);
+            
                     
             obj.ukf_x   = obj.ekf_x;
             obj.ukf_cov = obj.ekf_cov;

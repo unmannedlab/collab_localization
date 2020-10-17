@@ -1,6 +1,6 @@
 function [] = estimate_ekf(obj)
 
-% Predict IMU
+    % Predict IMU
     if mod(obj.tick, obj.rate / obj.rate_imu) == 0
         kf_predict(obj);
     end

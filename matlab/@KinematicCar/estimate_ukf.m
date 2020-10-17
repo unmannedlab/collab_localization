@@ -1,28 +1,28 @@
 function [] = estimate_ukf(obj)
 
-% Predict IMU
+    % Predict IMU
     if mod(obj.tick, obj.rate / obj.rate_imu) == 0
-        kf_predict(obj);
-    end
-            
-% Update Kinematic Model
-    if obj.kf_mdl && mod(obj.tick, obj.rate / obj.rate_mdl) == 0
-        kf_update_mdl(obj);
-    end
-    
-% Update GPS
-    if obj.kf_gps && mod(obj.tick, obj.rate / obj.rate_gps) == 0
-        kf_update_gps(obj);
+        ekf_predict(obj);
     end
 
-% Update UWB
+    % Update Kinematic Model
+    if obj.kf_mdl && mod(obj.tick, obj.rate / obj.rate_mdl) == 0
+        ekf_update_mdl(obj);
+    end
+    
+    % Update GPS
+    if obj.kf_gps && mod(obj.tick, obj.rate / obj.rate_gps) == 0
+        ekf_update_gps(obj);
+    end
+
+    % Update UWB
     if obj.kf_uwb && mod(obj.tick, obj.rate / obj.rate_uwb) == 0 
-        kf_update_uwb(obj);
+        ekf_update_uwb(obj);
     end
     
 end
 
-function [obj] = kf_predict(obj)
+function [obj] = ekf_predict(obj)
 
     dt = 1/obj.rate_imu;
     [accel, gyro, mag] = obj.sense_imu();
@@ -60,7 +60,7 @@ function [obj] = kf_predict(obj)
     obj.ukf_cov = F * obj.ukf_cov * F' + Q;
     
 end
-function [obj] = kf_update_mdl(obj)
+function [obj] = ekf_update_mdl(obj)
 
     [ vel, delta ] = obj.sense_model();
 
@@ -83,7 +83,7 @@ function [obj] = kf_update_mdl(obj)
     obj.ukf_cov = (eye(6) - K*H) * obj.ukf_cov;
     
 end
-function [obj] = kf_update_gps(obj)
+function [obj] = ekf_update_gps(obj)
     
     [ x, y, theta, vel ] = sense_gps(obj); 
     
@@ -113,7 +113,7 @@ function [obj] = kf_update_gps(obj)
     obj.ukf_cov = (eye(6) - K*H)*obj.ukf_cov;
 
 end
-function [obj] = kf_update_uwb(obj)
+function [obj] = ekf_update_uwb(obj)
     
     [~, lmk_dist] = obj.sense_uwb();
     
