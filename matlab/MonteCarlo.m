@@ -1,6 +1,6 @@
 clf; clear; close all;
 
-n = 100;
+n = 10;
 errors_kf_tun_lmk  = zeros(n,3);
 errors_uwb_tun_lmk = zeros(n,3);
 
@@ -9,7 +9,7 @@ for i = 1:n
     Sim = Simulation('Parallel',false, [1, 1, 1, 1]);
 
     Sim.run_to(20, 0.1);
-    errors_kf_sc_lmk(i,:) = [   RMSE(Sim.err_out{1}(:,1)), ...
+    errors_kf_tun_lmk(i,:) = [   RMSE(Sim.err_out{1}(:,1)), ...
                                 RMSE(Sim.err_out{1}(:,2)), ...
                                 RMSE(Sim.err_out{1}(:,3))];
 
