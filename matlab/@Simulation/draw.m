@@ -2,6 +2,7 @@ function obj = draw(obj)
 
     obj.fh.Visible = 'on';
     axis equal;
+    
     if obj.track_veh
         axis([  obj.cars{1}.x_pos,...
                 obj.cars{1}.x_pos,...
@@ -19,19 +20,19 @@ function obj = draw(obj)
                 sin(car.theta),  cos(car.theta)];
         A = [[-car.tw,  car.tw,  car.tw, -car.tw,  -car.tw]/2;...
              [ 0,       0,       car.wb,  car.wb,   0     ]];
-        RA = RB*A; 
-        car.body.XData = RA(1,:)+car.x_pos;
-        car.body.YData = RA(2,:)+car.y_pos;
+%         RA = RB*A; 
+%         car.body.XData = RA(1,:)+car.x_pos;
+%         car.body.YData = RA(2,:)+car.y_pos;
 
         
-        % Update Body Position - CKF
-        R_ckf = [   cos(car.ekf_x(3)), -sin(car.ekf_x(3));...
+        % Update Body Position - DCL Landmarks
+        R_dcl_lmk = [   cos(car.ekf_x(3)), -sin(car.ekf_x(3));...
                     sin(car.ekf_x(3)),  cos(car.ekf_x(3))];
         A = [[-car.tw,  car.tw,  car.tw, -car.tw,  -car.tw]/2;...
              [ 0,       0,       car.wb,  car.wb,   0     ]];
-        RA = R_ckf*A; 
-        car.body_ckf.XData = RA(1,:)+car.ckf_x(1);
-        car.body_ckf.YData = RA(2,:)+car.ckf_x(2);     
+        RA = R_dcl_lmk*A; 
+        car.body_dcl_lmk.XData = RA(1,:)+car.dcl_lmk_x(1);
+        car.body_dcl_lmk.YData = RA(2,:)+car.dcl_lmk_x(2);     
         
         
         % Update Body Position - EKF
@@ -44,14 +45,24 @@ function obj = draw(obj)
         car.body_ekf.YData = RA(2,:)+car.ekf_x(2);     
         
         
-        % Update Body Position - UKF
-        R_ukf = [   cos(car.ekf_x(3)), -sin(car.ekf_x(3));...
+        % Update Body Position - EKF Landmarks
+        R_ekf_lmk = [   cos(car.ekf_x(3)), -sin(car.ekf_x(3));...
                     sin(car.ekf_x(3)),  cos(car.ekf_x(3))];
         A = [[-car.tw,  car.tw,  car.tw, -car.tw,  -car.tw]/2;...
              [ 0,       0,       car.wb,  car.wb,   0     ]];
-        RA = R_ukf*A; 
-        car.body_ukf.XData = RA(1,:)+car.ukf_x(1);
-        car.body_ukf.YData = RA(2,:)+car.ukf_x(2);     
+        RA = R_ekf_lmk*A; 
+        car.body_ekf_lmk.XData = RA(1,:)+car.ekf_lmk_x(1);
+        car.body_ekf_lmk.YData = RA(2,:)+car.ekf_lmk_x(2);     
+        
+        
+        % Update Body Position - DCL
+        R_dcl = [   cos(car.dcl_x(3)), -sin(car.dcl_x(3));...
+                    sin(car.dcl_x(3)),  cos(car.dcl_x(3))];
+        A = [[-car.tw,  car.tw,  car.tw, -car.tw,  -car.tw]/2;...
+             [ 0,       0,       car.wb,  car.wb,   0     ]];
+        RA = R_dcl*A; 
+        car.body_dcl.XData = RA(1,:)+car.dcl_x(1);
+        car.body_dcl.YData = RA(2,:)+car.dcl_x(2);     
         
         
         % Wheel Rotation Matrix

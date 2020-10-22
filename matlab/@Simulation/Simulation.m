@@ -5,7 +5,10 @@ classdef Simulation < handle
         video_title
         plot_fig
         kf_switch
-        err_out
+        err_ekf
+        err_ekf_lmk
+        err_dcl
+        err_dcl_lmk
         fh
         tri_lmk
         axis_lim

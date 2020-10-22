@@ -25,8 +25,9 @@ function obj = step(obj)
                         obj.tags(2,3));
     
     obj.estimate_ekf()
-    obj.estimate_ukf()
-    obj.estimate_ckf()
+    obj.estimate_ekf_lmk()
+    obj.estimate_dcl()
+    obj.estimate_dcl_lmk()
     obj.tick = obj.tick + 1;
     obj.time = obj.tick / obj.rate;
 end

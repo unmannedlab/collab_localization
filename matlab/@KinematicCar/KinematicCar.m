@@ -34,13 +34,13 @@ classdef KinematicCar < handle
           
         ekf_x
         ekf_cov  
-        ukf_x
-        ukf_cov  
+        ekf_lmk_x
+        ekf_lmk_cov  
         
-        ckf_x
-        ckf_Sigma
-        ckf_sigma
-        ckf_init 
+        dcl_lmk_x
+        dcl_lmk_Sigma
+        dcl_lmk_sigma
+        dcl_lmk_init 
         
         dcl_x
         dcl_Sigma
@@ -54,14 +54,14 @@ classdef KinematicCar < handle
 
         tick = 0;
         time
-        body
         w_bl
         w_br
         w_fl
         w_fr
-        body_ckf
         body_ekf
-        body_ukf
+        body_ekf_lmk
+        body_dcl
+        body_dcl_lmk
         fh
         
         nCars = 1;
@@ -112,7 +112,7 @@ classdef KinematicCar < handle
             obj.delta   = x_0(5);
             obj.vel     = x_0(6);
             obj.accel   = 0;
-            obj.ekf_x    = [ x_0(2); 
+            obj.ekf_x   = [ x_0(2); 
                             x_0(3); 
                             x_0(4);... 
                            -x_0(6)*sin(x_0(4)); 
@@ -120,32 +120,38 @@ classdef KinematicCar < handle
                             obj.vel*tan(obj.delta)/obj.wb];
                     
             obj.ekf_cov = [ ...
-                    2.0e-2, -1.0e-5,  0.0e-0,  4.0e-4, -7.0e-5,  0.0e-0; ...
-                   -1.0e-5,  2.0e-2,  0.0e-0, -7.0e-5,  3.0e-4,  0.0e-0;...
-                    0.0e-0,  0.0e-0,  3.0e-3,  0.0e-0,  0.0e-0,  7.0e-5;...
-                    4.0e-4, -7.0e-5,  0.0e-0,  1.0e-2, -1.0e-3,  0.0e-0;...
-                   -7.0e-5,  3.0e-4,  0.0e-0, -1.0e-3,  1.0e-2,  0.0e-0;...
-                    0.0e-0,  0.0e-0,  7.0e-5,  0.0e-0,  0.0e-0,  1.0e-2];
-            
-            obj.ckf_x   = obj.ekf_x;
-            obj.ckf_sigma = repmat(eye(6),[obj.nCars,1]);
-            obj.ckf_Sigma = zeros(obj.nCars*6);
-            n = (obj.car_num-1)*6+1;
-            obj.ckf_Sigma(n:n+5,n:n+5) = obj.ekf_cov;
-            obj.ckf_init = false(obj.nCars,1);
-            
+                0.100,  0.001,  0.000,  0.070,  0.001,  0.000; ...
+                0.001,  0.100,  0.000,  0.003,  0.002,  0.000; ...
+                0.000,  0.000,  0.003,  0.000,  0.000,  0.000; ...
+                0.070,  0.003,  0.000,  0.100,  0.005,  0.000; ...
+                0.001,  0.002,  0.000,  0.005,  0.100,  0.000; ...
+                0.000,  0.000,  0.000,  0.000,  0.000,  0.010;];           
             
             obj.dcl_x   = obj.ekf_x;
-            obj.dcl_sigma = repmat(eye(6),[obj.nCars,1]);
+            obj.dcl_sigma = repmat(zeros(6),[obj.nCars,1]);
             obj.dcl_Sigma = zeros(obj.nCars*6);
             n = (obj.car_num-1)*6+1;
             obj.dcl_Sigma(n:n+5,n:n+5) = obj.ekf_cov;
             obj.dcl_init = false(obj.nCars,1);
             
                     
-            obj.ukf_x   = obj.ekf_x;
-            obj.ukf_cov = obj.ekf_cov;
+            obj.ekf_lmk_x   = obj.ekf_x;
+            obj.ekf_lmk_cov = [ ...
+                0.025,  0.003, -0.005,  0.025,  0.002,  0.000; ...
+                0.003,  0.025, -0.001,  0.003,  0.002,  0.000; ...
+               -0.005, -0.001,  0.001, -0.005, -0.001,  0.000; ...
+                0.025,  0.003, -0.005,  0.100,  0.005,  0.000; ...
+                0.002,  0.002, -0.001,  0.005,  0.100,  0.000; ...
+                0.000,  0.000,  0.000,  0.000,  0.000,  0.010;];
                 
+            obj.dcl_lmk_x   = obj.ekf_x;
+            obj.dcl_lmk_sigma = repmat(zeros(6),[obj.nCars,1]);
+            obj.dcl_lmk_Sigma = zeros(obj.nCars*6);
+            n = (obj.car_num-1)*6+1;
+            obj.dcl_lmk_Sigma(n:n+5,n:n+5) = obj.ekf_lmk_cov;
+            obj.dcl_lmk_init = false(obj.nCars,1);
+            
+            
             obj.rate =  lcm(obj.rate_imu, ...
                         lcm(obj.rate_mdl, ...
                         lcm(obj.rate_gps,obj.rate_uwb)));
@@ -159,10 +165,10 @@ classdef KinematicCar < handle
             
             if p.Results.plot_Fig
                 Carray = get(gca,'colororder');
-                obj.body = line(0,0,'Color',Carray(obj.car_num, :));
-                obj.body_ekf = line(0,0,'Color',Carray(obj.car_num, :),'LineStyle','--');
-                obj.body_ukf = line(0,0,'Color',Carray(obj.car_num, :),'LineStyle',':');
-                obj.body_ckf = line(0,0,'Color',Carray(obj.car_num, :),'LineStyle','-.');
+                obj.body_ekf        = line(0,0,'Color',Carray(obj.car_num, :),'LineStyle','-');
+                obj.body_ekf_lmk    = line(0,0,'Color',Carray(obj.car_num, :),'LineStyle','--');
+                obj.body_dcl        = line(0,0,'Color',Carray(obj.car_num, :),'LineStyle',':');
+                obj.body_dcl_lmk    = line(0,0,'Color',Carray(obj.car_num, :),'LineStyle','-.');
                 obj.w_bl = line(0,0,'Color','k');
                 obj.w_br = line(0,0,'Color','k');
                 obj.w_fl = line(0,0,'Color','k');

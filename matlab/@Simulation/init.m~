@@ -31,7 +31,7 @@ function [] = init(obj, scene)
                 KinematicCar(x1, UWB, 2, obj.plot_fig, obj.kf_switch); ...
                 KinematicCar(x2, UWB, 2, obj.plot_fig, obj.kf_switch)};
             
-            obj.axis_lim = [-15 15 -15 15];
+            obj.axis_lim = [-5 15 -10 10];
             obj.track_veh = true;
             
         case 'Street_Cross'
@@ -42,8 +42,8 @@ function [] = init(obj, scene)
             UWB.set_lmk_tag(4,  10,  10,  2);
             
             %    num,  x0,  y0,  theta,  delta,  vel,  
-            x1 = [1,  15,   2,  pi/2,    0.0,    0.0];  
-            x2 = [2,   0, -10,   0.0,    0.0,    0.0];
+            x1 = [2,  15,   2,  pi/2,    0.0,    0.0];  
+            x2 = [1,   , -10,   0.0,    0.0,    0.0];
             x3 = [3,   0,  10,    pi,    0.0,    0.0];
             x4 = [4, -15,  -2, -pi/2,    0.0,    0.0];
 

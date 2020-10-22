@@ -2,21 +2,21 @@ function [] = estimate_ekf(obj)
 
     % Predict IMU
     if mod(obj.tick, obj.rate / obj.rate_imu) == 0
-        kf_predict(obj);
+        predict(obj);
     end
     
     % Update Kinematic Model
     if obj.kf_mdl && mod(obj.tick, obj.rate / obj.rate_mdl) == 0
-        kf_update_mdl(obj);
+        update_mdl(obj);
     end
     
     % Update GPS
     if obj.kf_gps && mod(obj.tick, obj.rate / obj.rate_gps) == 0
-        kf_update_gps(obj);
+        update_gps(obj);
     end
 end
 
-function [obj] = kf_predict(obj)
+function [obj] = predict(obj)
     dt = 1/obj.rate_imu;
     [accel, gyro, mag] = obj.sense_imu();
     
@@ -54,7 +54,7 @@ function [obj] = kf_predict(obj)
 
 %     obj.uwb.set_car_state(obj.car_num, obj.ekf_x, obj.ekf_cov);
 end
-function [obj] = kf_update_mdl(obj)
+function [obj] = update_mdl(obj)
 
     [ vel, delta ] = obj.sense_model();
 
@@ -79,7 +79,7 @@ function [obj] = kf_update_mdl(obj)
 %     obj.uwb.set_car_state(obj.car_num, obj.ekf_x, obj.ekf_cov);
     
 end
-function [obj] = kf_update_gps(obj)
+function [obj] = update_gps(obj)
     
     [ x, y, theta, vel ] = sense_gps(obj); 
     
