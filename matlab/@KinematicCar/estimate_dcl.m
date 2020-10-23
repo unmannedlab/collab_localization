@@ -239,15 +239,15 @@ function [obj] = update_collab(obj)
             K = (Sigma_aa * F') / (F * Sigma_aa * F' + Q);
 
             del = K * (z - f);
-%             e0 = norm(obj.dcl_x(1:2) - [obj.x_pos, obj.y_pos]', 2);
-%             if e0 > 5
-%                 disp(e0);
-%             end
+            e0 = norm(obj.dcl_x(1:2) - [obj.x_pos, obj.y_pos]', 2);
+            if e0 > 3
+                disp(e0);
+            end
             obj.dcl_x = obj.dcl_x + del(1:6);
-%             e1 = norm(obj.dcl_x(1:2) - [obj.x_pos, obj.y_pos]', 2);
-%             if (e1-e0) > 1
-%                 disp(e1-e0)
-%             end
+            e1 = norm(obj.dcl_x(1:2) - [obj.x_pos, obj.y_pos]', 2);
+            if (e1-e0) > 1
+                disp(e1-e0)
+            end
             
             Sigma_t = (eye(6*2) - K*F)*Sigma_aa;
             Sigma_ii = Sigma_t(1:6, 1:6 );

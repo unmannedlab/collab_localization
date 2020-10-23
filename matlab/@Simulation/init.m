@@ -23,8 +23,8 @@ function [] = init(obj, scene)
             UWB.set_lmk_tag(4, -15,  20,  2);
             
             %    num,  x0,  y0,  theta,  delta,   vel,    
-            x1 = [1,   -5,   0,  -0.0,   -0.0,   1.0];
-            x2 = [2,    5,   0,   0.0,    0.0,   1.0];
+            x1 = [1,  -10,   0,  -0.0,   -0.0,   1.0];
+            x2 = [2,   -5,   0,   0.0,    0.0,   1.0];
 
             
             obj.cars = { ...
@@ -42,10 +42,10 @@ function [] = init(obj, scene)
             UWB.set_lmk_tag(4,  10,  10,  2);
             
             %    num,  x0,  y0,  theta,  delta,  vel,  
-            x1 = [1,  15,   2,  pi/2,    0.0,    0.0];  
+            x1 = [1,  15,   2,  pi/2,    0.0,    1.0];  
             x2 = [2,   0, -10,   0.0,    0.0,    0.0];
             x3 = [3,   0,  10,    pi,    0.0,    0.0];
-            x4 = [4, -15,  -2, -pi/2,    0.0,    0.0];
+            x4 = [4, -15,  -2, -pi/2,    0.0,    1.0];
 
             
             obj.cars = { ...
@@ -60,9 +60,13 @@ function [] = init(obj, scene)
         case 'Tunnel'
             UWB = UltraWideband(6);
             UWB.set_lmk_tag(1,  10, -50,  2);
-            UWB.set_lmk_tag(2,  10,   0,  2);
-            UWB.set_lmk_tag(3,  10,  50,  2);
-            UWB.set_lmk_tag(4,  10, 100,  2);
+            UWB.set_lmk_tag(2,  10, -25,  2);
+            UWB.set_lmk_tag(3,  10,   0,  2);
+            UWB.set_lmk_tag(4,  10,  25,  2);
+            UWB.set_lmk_tag(5,  10,  50,  2);
+            UWB.set_lmk_tag(6,  10,  75,  2);
+            UWB.set_lmk_tag(7,  10, 100,  2);
+            UWB.set_lmk_tag(8,  10, 125,  2);
             
             %    num,  x0,  y0,  theta,  delta,  vel,   
             x1 = [1,   -2,   0,  -0.0,   -0.0,   5.0];

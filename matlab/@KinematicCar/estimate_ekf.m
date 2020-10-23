@@ -52,7 +52,6 @@ function [obj] = predict(obj)
 
     obj.ekf_cov = F * obj.ekf_cov * F' + Q;
 
-%     obj.uwb.set_car_state(obj.car_num, obj.ekf_x, obj.ekf_cov);
 end
 function [obj] = update_mdl(obj)
 
@@ -75,8 +74,6 @@ function [obj] = update_mdl(obj)
 
     obj.ekf_x   = obj.ekf_x + K*(z - h);
     obj.ekf_cov = (eye(6) - K*H) * obj.ekf_cov;
-    
-%     obj.uwb.set_car_state(obj.car_num, obj.ekf_x, obj.ekf_cov);
     
 end
 function [obj] = update_gps(obj)
@@ -108,5 +105,4 @@ function [obj] = update_gps(obj)
     obj.ekf_x = obj.ekf_x + K*(z - h);
     obj.ekf_cov = (eye(6) - K*H)*obj.ekf_cov;
     
-%     obj.uwb.set_car_state(obj.car_num, obj.ekf_x, obj.ekf_cov);
 end

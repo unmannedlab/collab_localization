@@ -140,13 +140,13 @@ function [obj] = update_lmk(obj)
             H = zeros(2,6);
             H(1,1) = (X1(1)-lmk_x(1)) / sqrt(z(1));
             H(1,2) = (Y1(1)-lmk_x(2)) / sqrt(z(1));
-            H(1,3) = 1 / sqrt(z(1)) * ...
+            H(1,3) = -1 / sqrt(z(1)) * ...
                 ((X1(1)-lmk_x(1))*( obj.tag_offsets(1,1)*sin(obj.ekf_lmk_x(3)) + obj.tag_offsets(1,2)*cos(obj.ekf_lmk_x(3))) +...
                  (Y1(1)-lmk_x(2))*(-obj.tag_offsets(1,1)*cos(obj.ekf_lmk_x(3)) + obj.tag_offsets(1,2)*sin(obj.ekf_lmk_x(3))) );        
 
             H(2,1) = (X1(2)-lmk_x(1)) / sqrt(z(2));
             H(2,2) = (Y1(2)-lmk_x(2)) / sqrt(z(2));
-            H(2,3) = 1 / sqrt(z(2)) * ...
+            H(2,3) = -1 / sqrt(z(2)) * ...
                 ((X1(2)-lmk_x(1))*( obj.tag_offsets(1,1)*sin(obj.ekf_lmk_x(3)) + obj.tag_offsets(1,2)*cos(obj.ekf_lmk_x(3))) +...
                  (Y1(2)-lmk_x(2))*(-obj.tag_offsets(1,1)*cos(obj.ekf_lmk_x(3)) + obj.tag_offsets(1,2)*sin(obj.ekf_lmk_x(3))) );    
 
@@ -157,5 +157,4 @@ function [obj] = update_lmk(obj)
             obj.ekf_lmk_cov = (eye(6) - K*H) * obj.ekf_lmk_cov;
         end 
     end
-    
 end
