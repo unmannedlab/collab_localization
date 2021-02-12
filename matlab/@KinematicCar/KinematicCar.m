@@ -70,6 +70,8 @@ classdef KinematicCar < handle
         kf_gps = true;
         kf_uwb = true;
         kf_dcl = true;
+        
+        gpu_switch
     end
     
     
@@ -80,8 +82,9 @@ classdef KinematicCar < handle
             addRequired(p,'UWB_Object')
             addRequired(p,'nCars')
             addOptional(p,'plot_Fig', true);
-            addOptional(p,'kf_switch', [1,1,1]);
+            addOptional(p,'kf_switch', [1,1,1,1]);
             addOptional(p,'perfect', false);
+            
             parse(p,varargin{:});
             
             obj.uwb    = p.Results.UWB_Object;
@@ -90,6 +93,8 @@ classdef KinematicCar < handle
             obj.kf_gps = p.Results.kf_switch(2);
             obj.kf_uwb = p.Results.kf_switch(3);
             obj.kf_dcl = p.Results.kf_switch(4);
+            
+            obj.gpu_switch = gpuDeviceCount > 0;
             
             if p.Results.perfect
                 obj.gps_cep = 1e-12;

@@ -1,13 +1,13 @@
 clf; clear; close all;
 
-n = 5000;
+n = 10;
 err_ekf      = zeros(n,2);
 err_ekf_lmk  = zeros(n,2);
 err_dcl      = zeros(n,2);
 err_dcl_lmk  = zeros(n,2);
 
 tic
-parfor i = 1:n
+for i = 1:n
     if mod(i, 500) == 0
         disp(i)
     end

@@ -58,7 +58,7 @@ function [obj] = control(obj)
     n = (obj.car_num-1)*6+1;
     obj.dcl_Sigma(n:n+5,n:n+5) = G * obj.dcl_Sigma(n:n+5,n:n+5) * G' + R;
     
-    for j = setdiff(1:obj.nCars, obj.car_num)
+    for j = obj.setdiff2(obj.nCars, obj.car_num, 0)
         m = (j-1)*6+1;
         obj.dcl_sigma(m:m+5,:) = G * obj.dcl_sigma(m:m+5,:);
     end
@@ -88,7 +88,7 @@ function [obj] = update_mdl(obj)
     obj.dcl_x   = obj.dcl_x + K*(z - h);
     obj.dcl_Sigma(n:n+5,n:n+5) = (eye(6) - K*H) * obj.dcl_Sigma(n:n+5,n:n+5);
     
-    for j = setdiff(1:obj.nCars, obj.car_num)
+    for j = obj.setdiff2(obj.nCars, obj.car_num, 0)
         m = (j-1)*6+1;
         obj.dcl_sigma(m:m+5,:) = (eye(6) - K*H) * obj.dcl_sigma(m:m+5,:);
     end
@@ -126,7 +126,7 @@ function [obj] = update_gps(obj)
     obj.dcl_x = obj.dcl_x + K*(z - h);
     obj.dcl_Sigma(n:n+5,n:n+5) = (eye(6) - K*H)*obj.dcl_Sigma(n:n+5,n:n+5);
     
-    for j = setdiff(1:obj.nCars, obj.car_num)
+    for j = obj.setdiff2(obj.nCars, obj.car_num, 0)
         m = (j-1)*6+1;
         obj.dcl_sigma(m:m+5,:) = (eye(6) - K*H) * obj.dcl_sigma(m:m+5,:);
     end
@@ -138,7 +138,7 @@ function [obj] = update_collab(obj)
     
     [dcl_dist, ~] = obj.sense_uwb();
         
-    for j = setdiff(1:length(dcl_dist(:,1))/2, obj.car_num)
+    for j = obj.setdiff2(length(dcl_dist(:,1))/2, obj.car_num, 0)
         m = (j-1)*6+1;
         
         x_i = obj.dcl_x;
@@ -239,21 +239,13 @@ function [obj] = update_collab(obj)
             K = (Sigma_aa * F') / (F * Sigma_aa * F' + Q);
 
             del = K * (z - f);
-            e0 = norm(obj.dcl_x(1:2) - [obj.x_pos, obj.y_pos]', 2);
-            if e0 > 3
-                disp(e0);
-            end
             obj.dcl_x = obj.dcl_x + del(1:6);
-            e1 = norm(obj.dcl_x(1:2) - [obj.x_pos, obj.y_pos]', 2);
-            if (e1-e0) > 1
-                disp(e1-e0)
-            end
             
             Sigma_t = (eye(6*2) - K*F)*Sigma_aa;
             Sigma_ii = Sigma_t(1:6, 1:6 );
             Sigma_ij = Sigma_t(1:6, 7:12);
             
-            for k = setdiff(1:obj.nCars, [obj.car_num, j])
+            for k = obj.setdiff2(obj.nCars, obj.car_num, j)
                 if obj.dcl_init(k)
                     p = (k-1)*6+1;
                     obj.dcl_sigma(p:p+5,:) = Sigma_ii / obj.dcl_Sigma(n:n+5,n:n+5) * obj.dcl_sigma(p:p+5,:);
