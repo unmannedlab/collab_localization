@@ -2,10 +2,10 @@ addpath('input');
 addpath('output');
 addpath('scripts');
 
-nSims = 10;
-runtime = 30; 
+nSims = 1;
+runtime = 5; 
 
-par; 
+tun; 
 geometry;
 preprocessor;
 

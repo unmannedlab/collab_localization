@@ -1,6 +1,11 @@
-rate = 1200;
+rate = 150;
 dt = 1/rate;
 ticks = 0:runtime*rate-1;
+
+rate_imu = 150;
+rate_mdl =  30;
+rate_gps =  10;
+rate_uwb =   3;
 
 nTicks = length(ticks);
 acc = zeros(nTicks, nCars);
