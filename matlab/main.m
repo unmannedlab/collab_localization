@@ -2,7 +2,7 @@ addpath('input');
 addpath('output');
 addpath('scripts');
 
-nSimulations = 10;
+nSims = 10;
 runtime = 30; 
 
 par; 
@@ -15,4 +15,4 @@ for t=1:length(ticks)
     
 
 end
-clear t;
+% clear t;
