@@ -62,6 +62,7 @@ else
         
         EKF_P(:,:,:,:) = pagemtimes(pagemtimes(F, EKF_P(:,:,:,:)), F) + Q;
         
+        clear accel accel_r gyro mag theta Q F
     end
 
     % Pacmod Step at 30 Hz
@@ -95,6 +96,8 @@ else
             reshape(pagemtimes(K,reshape(z - h, [2, 1, nCars, nSims])), [6, nCars, nSims]);
         
         EKF_P(:,:,:,:) = pagemtimes((repmat(eye(6), [1,1,nCars,nSims]) - pagemtimes(K,H))  , EKF_P(:,:,:,:));
+
+        clear z_vel z_del z kf_vel H h R K
     end
 
     % GPS step at 10 Hz
@@ -136,6 +139,7 @@ else
             reshape(pagemtimes(K,reshape(z - h, [4, 1, nCars, nSims])), [6, nCars, nSims]);
         
         EKF_P(:,:,:,:) = pagemtimes((repmat(eye(6), [1,1,nCars,nSims]) - pagemtimes(K,H))  , EKF_P(:,:,:,:));
-            
+
+        clear z_x z_y z_t z_v z kf_vel H h R K
     end
 end

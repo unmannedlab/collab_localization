@@ -62,6 +62,7 @@ else
         
         EKF_LMK_P(:,:,:,:) = pagemtimes(pagemtimes(F, EKF_LMK_P(:,:,:,:)), F) + Q;
         
+        clear accel accel_r gyro mag theta Q F
     end
 
     % Pacmod Step at 30 Hz
@@ -95,6 +96,8 @@ else
             reshape(pagemtimes(K,reshape(z - h, [2, 1, nCars, nSims])), [6, nCars, nSims]);
         
         EKF_LMK_P(:,:,:,:) = pagemtimes((repmat(eye(6), [1,1,nCars,nSims]) - pagemtimes(K,H))  , EKF_LMK_P(:,:,:,:));
+
+        clear z_vel z_del z kf_vel H h R K
     end
 
     % GPS step at 10 Hz
@@ -136,60 +139,41 @@ else
             reshape(pagemtimes(K,reshape(z - h, [4, 1, nCars, nSims])), [6, nCars, nSims]);
         
         EKF_LMK_P(:,:,:,:) = pagemtimes((repmat(eye(6), [1,1,nCars,nSims]) - pagemtimes(K,H))  , EKF_LMK_P(:,:,:,:));
-            
+
+        clear z_x z_y z_t z_v z kf_vel H h R K
     end
     
     % UWB Update Step
-    if mod(t, rate/rate_uwb) == 0
+    if mod(t, rate/rate_uwb) == 0 && false
         
-        del_x = repmat(EKF_LMK_x(1,:,:,t),[nLmk,1,1]) - lmks(:,1);
-        del_y = repmat(EKF_LMK_x(2,:,:,t),[nLmk,1,1]) - lmks(:,2);
+        z_x = repmat(x_truth(1,:,t),[nLmk,1,nSims]) - lmks(:,1);
+        z_y = repmat(x_truth(2,:,t),[nLmk,1,nSims]) - lmks(:,2);
 
-        lmk_dist = sqrt(del_x.^2 + del_y.^2) ...
+        z = sqrt(z_x.^2 + z_y.^2) ...
             + normrnd(0, gps_per, [nLmk, nCars, nSims]);
         
-%         for i = 1:size(lmk_dist,1)
-%             if all(~isinf(lmk_dist(i, :)))
-% 
-%                 lmk_x = obj.uwb.lmk_tags(:,i);
-% 
-%                 R = [   cos(obj.ekf_lmk_x(3)), -sin(obj.ekf_lmk_x(3));...
-%                         sin(obj.ekf_lmk_x(3)),  cos(obj.ekf_lmk_x(3))];
-% 
-%                 off = R * obj.tag_offsets(:,1:2)';
-% 
-%                 X1 = off(1,:)+obj.ekf_lmk_x(1);
-%                 Y1 = off(2,:)+obj.ekf_lmk_x(2);
-%                 Z1 = obj.tag_offsets(:,3);
-% 
-%                 h = [   norm([X1(1)-lmk_x(1), Y1(1)-lmk_x(2), Z1(1)-lmk_x(3)],2);...
-%                         norm([X1(2)-lmk_x(1), Y1(2)-lmk_x(2), Z1(2)-lmk_x(3)],2)];
-% 
-%                 z = [   lmk_dist(i, 1);...
-%                         lmk_dist(i, 2)];
-% 
-%                 H = zeros(2,6);
-%                 H(1,1) = (X1(1)-lmk_x(1)) / sqrt(z(1));
-%                 H(1,2) = (Y1(1)-lmk_x(2)) / sqrt(z(1));
-%                 H(1,3) = -1 / sqrt(z(1)) * ...
-%                     ((X1(1)-lmk_x(1))*( obj.tag_offsets(1,1)*sin(obj.ekf_lmk_x(3)) + obj.tag_offsets(1,2)*cos(obj.ekf_lmk_x(3))) +...
-%                      (Y1(1)-lmk_x(2))*(-obj.tag_offsets(1,1)*cos(obj.ekf_lmk_x(3)) + obj.tag_offsets(1,2)*sin(obj.ekf_lmk_x(3))) );        
-% 
-%                 H(2,1) = (X1(2)-lmk_x(1)) / sqrt(z(2));
-%                 H(2,2) = (Y1(2)-lmk_x(2)) / sqrt(z(2));
-%                 H(2,3) = -1 / sqrt(z(2)) * ...
-%                     ((X1(2)-lmk_x(1))*( obj.tag_offsets(1,1)*sin(obj.ekf_lmk_x(3)) + obj.tag_offsets(1,2)*cos(obj.ekf_lmk_x(3))) +...
-%                      (Y1(2)-lmk_x(2))*(-obj.tag_offsets(1,1)*cos(obj.ekf_lmk_x(3)) + obj.tag_offsets(1,2)*sin(obj.ekf_lmk_x(3))) );    
-% 
-%                 R = eye(2)* obj.uwb_err;
-% 
-%                 K = obj.ekf_lmk_cov * H' / (H * obj.ekf_lmk_cov * H' + R);
-%                 obj.ekf_lmk_x = obj.ekf_lmk_x + K * (z - h);
-%                 obj.ekf_lmk_cov = (eye(6) - K*H) * obj.ekf_lmk_cov;
-%             end 
-%         end
-    
-    
+        z = max(z,0);
         
+        h_x = repmat(EKF_LMK_x(1,:,:,t),[nLmk,1,1]) - lmks(:,1);
+        h_y = repmat(EKF_LMK_x(2,:,:,t),[nLmk,1,1]) - lmks(:,2);
+        
+        h = sqrt(h_x.^2 + h_y.^2) ...
+            + normrnd(0, gps_per, [nLmk, nCars, nSims]);
+        
+        H = zeros(nLmk,6,nCars,nSims);
+        H(:,1,:,:) = h_x ./ sqrt(h);
+        H(:,2,:,:) = h_y ./ sqrt(h);
+        
+        R = repmat(eye(nLmk)*uwb_err, [1, 1, nCars, nSims]);
+        
+        K = pagediv(pagemtimes(EKF_LMK_P(:,:,:,:),'none',H,'transpose'), ...
+            (pagemtimes(pagemtimes(H,EKF_LMK_P(:,:,:,:)),'none',H,'transpose') + R));
+
+        EKF_LMK_x(:,:,:,t) = EKF_LMK_x(:,:,:,t) + ...
+            reshape(pagemtimes(K,reshape(z - h, [nLmk, 1, nCars, nSims])), [6, nCars, nSims]);
+        
+        EKF_LMK_P(:,:,:,:) = pagemtimes((repmat(eye(6), [1,1, nCars, nSims]) - pagemtimes(K,H))  , EKF_LMK_P(:,:,:,:));
+
+        clear z_x z_y z H h R K
     end
 end

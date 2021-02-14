@@ -12,8 +12,8 @@ preprocessor;
 tic 
 for t=1:length(ticks)
     Truth;
-    EKF;
     EKF_LMK;
+    EKF;
 end
 toc
 
