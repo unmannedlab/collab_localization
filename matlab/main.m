@@ -1,18 +1,20 @@
+addpath('algorithms');
+addpath('functions');
 addpath('input');
 addpath('output');
 addpath('scripts');
 
-nSims = 1;
-runtime = 5; 
+nSims = 10^4;
+runtime = 10;
 
-tun; 
-geometry;
+par; 
 preprocessor;
-
+tic 
 for t=1:length(ticks)
     Truth;
     EKF;
-    
-
+    EKF_LMK;
 end
-% clear t;
+toc
+
+postprocessor;
