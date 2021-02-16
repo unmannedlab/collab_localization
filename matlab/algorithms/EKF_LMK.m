@@ -41,8 +41,8 @@ else
             EKF_LMK_x(1,:,:,t-1) + EKF_LMK_x(4,:,:,t-1) * dt + accel_r(1,:,:) / 2 * dt^2; ...
             EKF_LMK_x(2,:,:,t-1) + EKF_LMK_x(5,:,:,t-1) * dt + accel_r(2,:,:) / 2 * dt^2; ...
            (EKF_LMK_x(3,:,:,t-1) + gyro * dt) * 0.98 + 0.02 * mag;...
-            EKF_LMK_x(4,:,:,t-1) + accel_r(1) * dt;...
-            EKF_LMK_x(5,:,:,t-1) + accel_r(2) * dt;...
+            EKF_LMK_x(4,:,:,t-1) + accel_r(1,:,:) * dt;...
+            EKF_LMK_x(5,:,:,t-1) + accel_r(2,:,:) * dt;...
             gyro];
 
 
@@ -144,21 +144,20 @@ else
     end
     
     % UWB Update Step
-    if mod(t, rate/rate_uwb) == 0 && false
+    if mod(t, rate/rate_uwb) == 0
         
         z_x = repmat(x_truth(1,:,t),[nLmk,1,nSims]) - lmks(:,1);
         z_y = repmat(x_truth(2,:,t),[nLmk,1,nSims]) - lmks(:,2);
 
         z = sqrt(z_x.^2 + z_y.^2) ...
-            + normrnd(0, gps_per, [nLmk, nCars, nSims]);
+            + normrnd(0, uwb_err, [nLmk, nCars, nSims]);
         
         z = max(z,0);
         
         h_x = repmat(EKF_LMK_x(1,:,:,t),[nLmk,1,1]) - lmks(:,1);
         h_y = repmat(EKF_LMK_x(2,:,:,t),[nLmk,1,1]) - lmks(:,2);
         
-        h = sqrt(h_x.^2 + h_y.^2) ...
-            + normrnd(0, gps_per, [nLmk, nCars, nSims]);
+        h = sqrt(h_x.^2 + h_y.^2);
         
         H = zeros(nLmk,6,nCars,nSims);
         H(:,1,:,:) = h_x ./ sqrt(h);
