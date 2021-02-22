@@ -1,15 +1,14 @@
 % clear; clc; 
 
 addpath('algorithms');
-addpath('functions');
 addpath('input');
 addpath('output');
-addpath('scripts');
+addpath('src');
 
-nSims = 10^4;
+nSims = 10^2;
 runtime = 20;
 SF = -0;
-plt = true;
+plt = false;
 sve = false;
 
 par; 
@@ -18,7 +17,11 @@ tic
 for t=1:length(ticks)
     Truth;
     EKF;
-    EKF_LMK;
+    DCL;
+    DC2;
+    
+%     EKF_LMK;
+%     DCL_LMK;
 end
 toc
 

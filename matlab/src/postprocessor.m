@@ -1,0 +1,54 @@
+clear accel accel_r F gyro h H K kf_vel mag Q R x0 z z_del z_t z_v z_vel z_x z_y;
+
+EKF_err =       EKF_x(1:3,:,:,:)     - repmat(reshape(x_truth(1:3,:,:), [3, nCars, 1, nTicks]), [1, 1, nSims, 1]);
+DCL_err =       DCL_x(1:3,:,:,:)     - repmat(reshape(x_truth(1:3,:,:), [3, nCars, 1, nTicks]), [1, 1, nSims, 1]);
+DC2_err =       DC2_x(1:3,:,:,:)     - repmat(reshape(x_truth(1:3,:,:), [3, nCars, 1, nTicks]), [1, 1, nSims, 1]);
+
+% EKF_LMK_err =   EKF_LMK_x(1:3,:,:,:) - repmat(reshape(x_truth(1:3,:,:), [3, nCars, 1, nTicks]), [1, 1, nSims, 1]);
+% DCL_LMK_err =   DCL_LMK_x(1:3,:,:,:) - repmat(reshape(x_truth(1:3,:,:), [3, nCars, 1, nTicks]), [1, 1, nSims, 1]);
+
+
+EKF_m = reshape(mean(EKF_err, [2,4]), [3, nSims]);
+DCL_m = reshape(mean(DCL_err, [2,4]), [3, nSims]);
+DC2_m = reshape(mean(DC2_err, [2,4]), [3, nSims]);
+% EKF_LMK_m =   reshape(mean(EKF_LMK_err,[2,4]), [3, nSims]);
+% DCL_LMK_m =   reshape(mean(DCL_LMK_err,0,[2,4]), [3, nSims]);
+
+
+nBins = 20;
+
+if plt
+    figure(1); clf; hold on; 
+    histogram(EKF_m(1,:));
+    histogram(DCL_m(1,:));
+    histogram(DC2_m(1,:));
+%     histogram(EKF_LMK_m(1,:));
+%     histogram(DCL_LMK_m(1,:));
+    xlabel('X Error');
+    hold off;
+
+    figure(2); clf; hold on;
+    histogram(EKF_m(2,:), nBins);
+    histogram(DCL_m(2,:), nBins);
+    histogram(DC2_m(2,:), nBins);
+%     histogram(EKF_LMK_m(2,:), nBins);
+%     histogram(DCL_LMK_m(2,:), nBins);
+    xlabel('Y Error');
+    hold off;
+
+    figure(3); clf; hold on;
+    histogram(EKF_m(3,:), nBins);
+    histogram(DCL_m(3,:), nBins);
+    histogram(DC2_m(3,:), nBins);
+%     histogram(EKF_LMK_m(3,:), nBins);
+%     histogram(DCL_LMK_m(3,:), nBins);
+    xlabel('Theta Error');
+    hold off; 
+end
+
+if sve 
+    fn = [datestr(now,'yyyy_mm_dd-HH_MM-'),in_name,'-',num2str(nSims),'.mat'];
+    ff = fullfile('output',fn);
+
+    save(ff, 'std_err');
+end
