@@ -6,9 +6,10 @@ classdef Simulation < handle
         plot_fig
         kf_switch
         err_ekf
-        err_ekf_lmk
+%         err_ekf_lmk
         err_dcl
-        err_dcl_lmk
+        err_dc2
+%         err_dcl_lmk
         fh
         tri_lmk
         axis_lim

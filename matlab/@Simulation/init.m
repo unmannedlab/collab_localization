@@ -104,8 +104,10 @@ function [] = init(obj, scene)
     end
     
     obj.tri_lmk = cell(size(UWB.lmk_tags,1),1);
-    for i = 1:size(UWB.lmk_tags,2)
-        obj.tri_lmk{i} = triangle(UWB.lmk_tags(1,i),UWB.lmk_tags(2,i));
+    if obj.plot_fig
+        for i = 1:size(UWB.lmk_tags,2)
+            obj.tri_lmk{i} = triangle(UWB.lmk_tags(1,i),UWB.lmk_tags(2,i));
+        end
     end
 end
 

@@ -6,6 +6,10 @@ classdef UltraWideband < handle
         dcl_Sigma
         dcl_sigma
         
+        dc2_states
+        dc2_Sigma
+        dc2_sigma
+        
         dcl_lmk_states
         dcl_lmk_Sigma
         dcl_lmk_sigma
@@ -29,6 +33,12 @@ classdef UltraWideband < handle
             obj.dcl_states(:, car_num) = x;
             obj.dcl_Sigma(:,:,car_num) = Sigma;
             obj.dcl_sigma(:,:,car_num) = sigma;
+        end
+        
+        function obj = set_dc2(obj, car_num, x, Sigma, sigma)
+            obj.dc2_states(:, car_num) = x;
+            obj.dc2_Sigma(:,:,car_num) = Sigma;
+            obj.dc2_sigma(:,:,car_num) = sigma;
         end
         
         function obj = set_dcl_lmk(obj, car_num, x, Sigma, sigma)

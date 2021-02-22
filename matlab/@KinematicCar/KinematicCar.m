@@ -47,6 +47,11 @@ classdef KinematicCar < handle
         dcl_sigma
         dcl_init 
         
+        dc2_x
+        dc2_Sigma
+        dc2_sigma
+        dc2_init 
+        
         uwb
         anchors
         tags
@@ -138,6 +143,13 @@ classdef KinematicCar < handle
             n = (obj.car_num-1)*6+1;
             obj.dcl_Sigma(n:n+5,n:n+5) = obj.ekf_cov;
             obj.dcl_init = false(obj.nCars,1);
+            
+            obj.dc2_x   = obj.ekf_x;
+            obj.dc2_sigma = repmat(zeros(6),[obj.nCars,1]);
+            obj.dc2_Sigma = zeros(obj.nCars*6);
+            n = (obj.car_num-1)*6+1;
+            obj.dc2_Sigma(n:n+5,n:n+5) = obj.ekf_cov;
+            obj.dc2_init = false(obj.nCars,1);
             
                     
             obj.ekf_lmk_x   = obj.ekf_x;
