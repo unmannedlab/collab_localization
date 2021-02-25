@@ -45,7 +45,7 @@ else
             EKF_x(5,:,:,t-1) + accel_r(2,:,:) * dt;...
             gyro];
 
-
+        
         Q = diag([  imu_acc_err / 2 / rate_imu^2    ;...
                     imu_acc_err / 2 / rate_imu^2    ;...
                     imu_gyr_err / rate_imu        ;...
@@ -59,6 +59,7 @@ else
                 0, 0, 0, 1, 0, 0;...
                 0, 0, 0, 0, 1, 0;...
                 0, 0, 0, 0, 0, 1];
+            
         
         EKF_P(:,:,:,:) = pagemtimes(pagemtimes(F, EKF_P(:,:,:,:)), F) + Q;
         
@@ -94,7 +95,7 @@ else
 
         EKF_x(:,:,:,t) = EKF_x(:,:,:,t) + ...
             reshape(pagemtimes(K,reshape(z - h, [2, 1, nCars, nSims])), [6, nCars, nSims]);
-        
+       
         EKF_P(:,:,:,:) = pagemtimes((repmat(eye(6), [1,1,nCars,nSims]) - pagemtimes(K,H))  , EKF_P(:,:,:,:));
 
         clear z_vel z_del z kf_vel H h R K

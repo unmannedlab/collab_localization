@@ -10,7 +10,7 @@ function [out] = fmain(nSims)
     plt = false;
     sve = false;
 
-    par; 
+    scs; 
     preprocessor;
 
     for t=1:length(ticks)
@@ -18,6 +18,7 @@ function [out] = fmain(nSims)
         EKF;
         DCL;
         DC2;
+        CCL;
 
     %     EKF_LMK;
     %     DCL_LMK;
@@ -28,6 +29,7 @@ function [out] = fmain(nSims)
     out.EKF = EKF_m;
     out.DCL = DCL_m;
     out.DC2 = DC2_m;
+    out.CCL = CCL_m;
 
 end
 
