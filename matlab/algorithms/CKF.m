@@ -120,14 +120,10 @@ else
     % GPS step at 10 Hz 
     if mod(t, rate/rate_gps) == 0 && sensors(3)
         
-        z_x = x_truth(1,:,t)' ...
-            + normrnd(0, gps_per, [nCars, nSims]);
-        z_y = x_truth(2,:,t)' ...
-            + normrnd(0, gps_per, [nCars, nSims]);
-        z_t = x_truth(3,:,t)' ...
-            + normrnd(0, gps_her, [nCars, nSims]);
-        z_v = x_truth(4,:,t)' ...
-            + normrnd(0, gps_ver, [nCars, nSims]);
+        z_x = x_truth(1,:,t)' + normrnd(0, gps_per, [nCars, nSims]);
+        z_y = x_truth(2,:,t)' + normrnd(0, gps_per, [nCars, nSims]);
+        z_t = x_truth(3,:,t)' + normrnd(0, gps_her, [nCars, nSims]);
+        z_v = x_truth(4,:,t)' + normrnd(0, gps_ver, [nCars, nSims]);
         
         z = [ z_x; z_y; z_t; z_v ];
 
@@ -167,5 +163,38 @@ else
         CKF_P(:,:,:) = pagemtimes((repmat(eye(6*nCars), [1,1,nSims]) - pagemtimes(K,H))  , CKF_P(:,:,:));
 
         clear z_x z_y z_t z_v z kf_vel H h R K
+    end
+
+    % UWB Update Step
+    if mod(t, rate/rate_uwb) == 0
+        
+%         z_x = repmat(x_truth(1,:,t),[nLmk,1,nSims]) - lmks(:,1);
+%         z_y = repmat(x_truth(2,:,t),[nLmk,1,nSims]) - lmks(:,2);
+% 
+%         z = sqrt(z_x.^2 + z_y.^2) ...
+%             + normrnd(0, uwb_err, [nLmk, nCars, nSims]);
+%         
+%         z = max(z,0);
+%         
+%         h_x = repmat(EKF_LMK_x(1,:,:,t),[nLmk,1,1]) - lmks(:,1);
+%         h_y = repmat(EKF_LMK_x(2,:,:,t),[nLmk,1,1]) - lmks(:,2);
+%         
+%         h = sqrt(h_x.^2 + h_y.^2);
+%         
+%         H = zeros(nLmk,6,nCars,nSims);
+%         H(:,1,:,:) = h_x ./ sqrt(h);
+%         H(:,2,:,:) = h_y ./ sqrt(h);
+%         
+%         R = repmat(eye(nLmk)*uwb_err, [1, 1, nCars, nSims]);
+%         
+%         K = pagediv(pagemtimes(EKF_LMK_P(:,:,:,:),'none',H,'transpose'), ...
+%             (pagemtimes(pagemtimes(H,EKF_LMK_P(:,:,:,:)),'none',H,'transpose') + R));
+% 
+%         EKF_LMK_x(:,:,:,t) = EKF_LMK_x(:,:,:,t) + ...
+%             reshape(pagemtimes(K,reshape(z - h, [nLmk, 1, nCars, nSims])), [6, nCars, nSims]);
+%         
+%         EKF_LMK_P(:,:,:,:) = pagemtimes((repmat(eye(6), [1,1, nCars, nSims]) - pagemtimes(K,H))  , EKF_LMK_P(:,:,:,:));
+% 
+%         clear z_x z_y z H h R K
     end
 end

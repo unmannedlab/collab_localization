@@ -1,20 +1,17 @@
 if t == 1
+    
     EKF_x = zeros(6, nCars, nSims, nTicks);
-    EKF_P = zeros(6, 6, nCars, nSims);
-    
     EKF_x(1:3,:,:,t) = repmat(x_truth(1:3,:,t), [1,1,nSims]);
+    EKF_x(4,:,:,t)   = repmat(-sin(x_truth(3,:,t)) .* x_truth(4,:,t), [1,1,nSims]);
+    EKF_x(5,:,:,t)   = repmat( cos(x_truth(3,:,t)) .* x_truth(4,:,t), [1,1,nSims]);
     
-    EKF_x(4,:,:,t) = ...
-        repmat(-sin(x_truth(3,:,t)) .* x_truth(4,:,t), [1,1,nSims]);
-    EKF_x(5,:,:,t) = ...
-        repmat( cos(x_truth(3,:,t)) .* x_truth(4,:,t), [1,1,nSims]);
-    
+    EKF_P = zeros(6, 6, nCars, nSims);
     EKF_P(:,:,:,:) = repmat(... 
             diag([  imu_acc_err / 2 / rate_imu^2    ;...
                     imu_acc_err / 2 / rate_imu^2    ;...
-                    imu_gyr_err / rate_imu        ;...
-                    imu_acc_err / rate_imu        ;...
-                    imu_acc_err / rate_imu        ;...
+                    imu_gyr_err / rate_imu          ;...
+                    imu_acc_err / rate_imu          ;...
+                    imu_acc_err / rate_imu          ;...
                     imu_gyr_err]), [1,1,nCars,nSims]);
                 
 else
@@ -58,9 +55,14 @@ else
                 0,  0,  1,  0,  0, dt  ;...
                 0,  0,  0,  1,  0,  0  ;...
                 0,  0,  0,  0,  1,  0  ;...
-                0,  0,  0,  0,  0,  1];
+                0,  0,  0,  0,  0,  1 ];
             
-        EKF_P(:,:,:,:) = pagemtimes(pagemtimes(F, EKF_P(:,:,:,:)),'none', F, 'transpose') + Q;
+        EKF_P(:,:,:,:) = ...
+            pagemtimes(...
+                pagemtimes(...
+                    F, ...
+                    EKF_P(:,:,:,:)),'none',...
+                F, 'transpose') + Q;
         
         clear accel accel_r gyro mag theta Q F
     end
@@ -68,10 +70,8 @@ else
     % Pacmod Step at 30 Hz
     if mod(t, rate/rate_mdl) == 0 && sensors(2)
 
-        z_vel = x_truth(4,:,t) ...
-            + normrnd(0, enc_err, [1, nCars, nSims]);
-        z_del = del(t,:) ...
-            + normrnd(0, imu_mag_err, [1, nCars, nSims]);
+        z_vel = x_truth(4,:,t) + normrnd(0, enc_err, [1, nCars, nSims]);
+        z_del = del(t,:) + normrnd(0, imu_mag_err, [1, nCars, nSims]);
         
         z = [   z_vel;...
                 z_vel.*tan(z_del) / wb ];
@@ -89,13 +89,10 @@ else
         R(1,1,:,:) = enc_err;
         R(2,2,:,:) = str_err * z_vel / wb;
 
-        K = pagediv(pagemtimes(EKF_P(:,:,:,:),'none',H,'transpose'), ...
-            (pagemtimes(pagemtimes(H,EKF_P(:,:,:,:)),'none',H,'transpose') + R));
+        K = pagediv( pagemtimes(EKF_P(:,:,:,:),'none',H,'transpose'), (pagemtimes( pagemtimes(H,EKF_P(:,:,:,:)), 'none', H, 'transpose') + R));
 
-        EKF_x(:,:,:,t) = EKF_x(:,:,:,t) + ...
-            reshape(pagemtimes(K,reshape(z - h, [2, 1, nCars, nSims])), [6, nCars, nSims]);
-       
-        EKF_P(:,:,:,:) = pagemtimes((repmat(eye(6), [1,1,nCars,nSims]) - pagemtimes(K,H))  , EKF_P(:,:,:,:));
+        EKF_x(:,:,:,t) = EKF_x(:,:,:,t) + reshape( pagemtimes( K, reshape((z-h), [2, 1, nCars, nSims])), [6, nCars, nSims]);
+        EKF_P(:,:,:,:) = pagemtimes( (repmat(eye(6), [1,1,nCars,nSims]) - pagemtimes(K,H)), EKF_P(:,:,:,:));
 
         clear z_vel z_del z kf_vel H h R K
     end
@@ -103,14 +100,10 @@ else
     % GPS step at 10 Hz
     if mod(t, rate/rate_gps) == 0 && sensors(3)
 
-        z_x = x_truth(1,:,t) ...
-            + normrnd(0, gps_per, [1, nCars, nSims]);
-        z_y = x_truth(2,:,t) ...
-            + normrnd(0, gps_per, [1, nCars, nSims]);
-        z_t = x_truth(3,:,t) ...
-            + normrnd(0, gps_her, [1, nCars, nSims]);
-        z_v = x_truth(4,:,t) ...
-            + normrnd(0, gps_ver, [1, nCars, nSims]);
+        z_x = x_truth(1,:,t) + normrnd(0, gps_per, [1, nCars, nSims]);
+        z_y = x_truth(2,:,t) + normrnd(0, gps_per, [1, nCars, nSims]);
+        z_t = x_truth(3,:,t) + normrnd(0, gps_her, [1, nCars, nSims]);
+        z_v = x_truth(4,:,t) + normrnd(0, gps_ver, [1, nCars, nSims]);
         
         z = [ z_x; z_y; z_t; z_v ];
 
@@ -132,13 +125,10 @@ else
             gps_her;...
             gps_ver]), [1, 1, nCars, nSims]);
 
-        K = pagediv(pagemtimes(EKF_P(:,:,:,:),'none',H,'transpose'), ...
-            (pagemtimes(pagemtimes(H,EKF_P(:,:,:,:)),'none',H,'transpose') + R));
+        K = pagediv( pagemtimes(EKF_P(:,:,:,:),'none',H,'transpose'), ( pagemtimes( pagemtimes( H, EKF_P(:,:,:,:)), 'none', H, 'transpose') + R ) );
 
-        EKF_x(:,:,:,t) = EKF_x(:,:,:,t) + ...
-            reshape(pagemtimes(K,reshape(z - h, [4, 1, nCars, nSims])), [6, nCars, nSims]);
-        
-        EKF_P(:,:,:,:) = pagemtimes((repmat(eye(6), [1,1,nCars,nSims]) - pagemtimes(K,H))  , EKF_P(:,:,:,:));
+        EKF_x(:,:,:,t) = EKF_x(:,:,:,t) + reshape( pagemtimes( K, reshape(z - h, [4, 1, nCars, nSims])), [6, nCars, nSims] );
+        EKF_P(:,:,:,:) = pagemtimes( ( repmat( eye(6), [1,1,nCars,nSims] ) - pagemtimes(K,H) ), EKF_P(:,:,:,:) );
 
         clear z_x z_y z_t z_v z kf_vel H h R K
     end

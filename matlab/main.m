@@ -12,7 +12,7 @@ sve = false;
 
 sensors = [true, true, true, false];
 
-par;
+scs;
 preprocessor;
 
 tic 
