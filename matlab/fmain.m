@@ -16,9 +16,9 @@ function [out] = fmain(nSims)
     for t=1:length(ticks)
         Truth;
         EKF;
-        DCL;
-        DC2;
-        CCL;
+%         DCL;
+%         DC2;
+        CKF;
 
     %     EKF_LMK;
     %     DCL_LMK;
@@ -27,9 +27,9 @@ function [out] = fmain(nSims)
     postprocessor;
 
     out.EKF = EKF_m;
-    out.DCL = DCL_m;
-    out.DC2 = DC2_m;
-    out.CCL = CCL_m;
+%     out.DCL = DCL_m;
+%     out.DC2 = DC2_m;
+    out.CKF = CKF_m;
 
 end
 

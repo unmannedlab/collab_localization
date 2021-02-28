@@ -15,15 +15,15 @@ if exist('DC2_x','var')
     DC2_m = reshape(RMSE(DC2_err), [3, nSims]);
 end
 
-if exist('CCL_x','var')
+if exist('CKF_x','var')
     m = zeros(3*nCars,1);
     for i = 1:nCars
         m(i*3-2) = i*6-5;
         m(i*3-1) = i*6-4;
         m(i*3-0) = i*6-3;
     end
-    CCL_err = CCL_x(m,:,:) - repmat(reshape(x_truth(1:3,:,:), [3*nCars, 1, nTicks]), [1, nSims, 1]);
-    CCL_m = reshape(RMSE(reshape(CCL_err, [3,nCars,nSims,nTicks])), [3, nSims]);
+    CKF_err = CKF_x(m,:,:) - repmat(reshape(x_truth(1:3,:,:), [3*nCars, 1, nTicks]), [1, nSims, 1]);
+    CKF_m = reshape(RMSE(reshape(CKF_err, [3,nCars,nSims,nTicks])), [3, nSims]);
 end
 
 if exist('EKF_LMK_x','var')
@@ -39,44 +39,44 @@ end
 nBins = 20;
 
 if plt
-    figure(1); clf; xlabel('X Error');
-    figure(2); clf; xlabel('Y Error');
-    figure(3); clf; xlabel('Theta Error');    
+    figure(1); clf; legend; xlabel('X Error'); legend;
+    figure(2); clf; legend; xlabel('Y Error');
+    figure(3); clf; legend; xlabel('Theta Error');    
     
     if exist('EKF_x','var')
-        figure(1); hold on; histogram(EKF_m(1,:)); hold off;
-        figure(2); hold on; histogram(EKF_m(2,:)); hold off;
-        figure(3); hold on; histogram(EKF_m(3,:)); hold off;
+        figure(1); hold on; histogram(EKF_m(1,:), 'DisplayName', 'EKF'); hold off;
+        figure(2); hold on; histogram(EKF_m(2,:), 'DisplayName', 'EKF'); hold off;
+        figure(3); hold on; histogram(EKF_m(3,:), 'DisplayName', 'EKF'); hold off;
     end
 
     if exist('DCL_x','var')
-        figure(1); hold on; histogram(DCL_m(1,:)); hold off;
-        figure(2); hold on; histogram(DCL_m(2,:)); hold off;
-        figure(3); hold on; histogram(DCL_m(3,:)); hold off;
+        figure(1); hold on; histogram(DCL_m(1,:), 'DisplayName', 'DCL'); hold off;
+        figure(2); hold on; histogram(DCL_m(2,:), 'DisplayName', 'DCL'); hold off;
+        figure(3); hold on; histogram(DCL_m(3,:), 'DisplayName', 'DCL'); hold off;
     end
 
     if exist('DC2_x','var')
-        figure(1); hold on; histogram(DC2_m(1,:)); hold off;
-        figure(2); hold on; histogram(DC2_m(2,:)); hold off;
-        figure(3); hold on; histogram(DC2_m(3,:)); hold off;
+        figure(1); hold on; histogram(DC2_m(1,:), 'DisplayName', 'DC2'); hold off;
+        figure(2); hold on; histogram(DC2_m(2,:), 'DisplayName', 'DC2'); hold off;
+        figure(3); hold on; histogram(DC2_m(3,:), 'DisplayName', 'DC2'); hold off;
     end
 
-    if exist('CCL_x','var')
-        figure(1); hold on; histogram(CCL_m(1,:)); hold off;
-        figure(2); hold on; histogram(CCL_m(2,:)); hold off;
-        figure(3); hold on; histogram(CCL_m(3,:)); hold off;
+    if exist('CKF_x','var')
+        figure(1); hold on; histogram(CKF_m(1,:), 'DisplayName', 'CKF'); hold off;
+        figure(2); hold on; histogram(CKF_m(2,:), 'DisplayName', 'CKF'); hold off;
+        figure(3); hold on; histogram(CKF_m(3,:), 'DisplayName', 'CKF'); hold off;
     end
 
     if exist('EKF_LMK_x','var')
-        figure(1); hold on; histogram(EKF_LMK_m(1,:)); hold off;
-        figure(2); hold on; histogram(EKF_LMK_m(2,:)); hold off;
-        figure(3); hold on; histogram(EKF_LMK_m(3,:)); hold off;
+        figure(1); hold on; histogram(EKF_LMK_m(1,:), 'DisplayName', 'EKF_LMK'); hold off;
+        figure(2); hold on; histogram(EKF_LMK_m(2,:), 'DisplayName', 'EKF_LMK'); hold off;
+        figure(3); hold on; histogram(EKF_LMK_m(3,:), 'DisplayName', 'EKF_LMK'); hold off;
     end
 
     if exist('DCL_LMK_x','var')
-        figure(1); hold on; histogram(DCL_LMK_m(1,:)); hold off;
-        figure(2); hold on; histogram(DCL_LMK_m(2,:)); hold off;
-        figure(3); hold on; histogram(DCL_LMK_m(3,:)); hold off;
+        figure(1); hold on; histogram(DCL_LMK_m(1,:), 'DisplayName', 'DCL_LMK'); hold off;
+        figure(2); hold on; histogram(DCL_LMK_m(2,:), 'DisplayName', 'DCL_LMK'); hold off;
+        figure(3); hold on; histogram(DCL_LMK_m(3,:), 'DisplayName', 'DCL_LMK'); hold off;
     end
 
 end
