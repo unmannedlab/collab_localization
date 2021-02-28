@@ -1,4 +1,4 @@
-clear; clc; 
+% clear; clc; 
 
 addpath('algorithms');
 addpath('input');
@@ -11,7 +11,7 @@ SF = -0;
 plt = true;
 sve = false;
 
-par; 
+lone; 
 preprocessor;
 tic 
 for t=1:length(ticks)

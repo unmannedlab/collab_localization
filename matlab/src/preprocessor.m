@@ -11,7 +11,7 @@ wb = 4;
 tw = 2;
 
 gps_per = 1.2       *10^SF;
-gps_her = 0.005     *10^SF;
+gps_her = 0.035     *10^SF;
 gps_ver = 0.05      *10^SF;
 enc_err = 0.05      *10^SF;
 str_err = 0.05      *10^SF;
