@@ -21,7 +21,7 @@ if t == 1
 else
     
     % Predict Step at 400 Hz
-    if mod(t, rate/rate_imu) == 0
+    if mod(t, rate/rate_imu) == 0 && sensors(1)
         
         accel = [acc(t,:)'; x_truth(4,:,t)'.^2 / wb.* tan(del(t,:))'] ...
             + normrnd(0, imu_acc_err, [2*nCars, nSims]);
@@ -32,12 +32,13 @@ else
         mag = x_truth(3,:,t)' ...
             + normrnd(0, imu_mag_err, [nCars, nSims]);
         
-        theta = CKF_x([1:nCars]*3,:,t);
+        theta = CKF_x((1:nCars)*3,:,t);
         
         accel_r = [...
-            -sin(theta) .* accel(1,:,:) - cos(theta).*accel(2,:,:) ;...
-             cos(theta) .* accel(1,:,:) - sin(theta).*accel(2,:,:) ];
-
+            -sin(theta) .* accel(1:nCars,:) - cos(theta).*accel(nCars+1:nCars*2,:) ;...
+             cos(theta) .* accel(1:nCars,:) - sin(theta).*accel(nCars+1:nCars*2,:) ];
+        
+        CKF_x(:,:,t) = zeros(6*nCars, nSims, 1);
         for i =1:nCars
             m = (i-1)*6 + 1;
             n = (i-1)*2 + 1;
@@ -51,22 +52,20 @@ else
                 gyro(i,:)];
         end; clear m n;
         
-        Q = diag(...
-                repmat(...
-                   [imu_acc_err / 2 / rate_imu^2    ;...
-                    imu_acc_err / 2 / rate_imu^2    ;...
-                    imu_gyr_err / rate_imu          ;...
-                    imu_acc_err / rate_imu          ;...
-                    imu_acc_err / rate_imu          ;...
-                    imu_gyr_err], [nCars,1]));
+        Q = diag(repmat([  ...
+            imu_acc_err / 2 / rate_imu^2    ;...
+            imu_acc_err / 2 / rate_imu^2    ;...
+            imu_gyr_err / rate_imu          ;...
+            imu_acc_err / rate_imu          ;...
+            imu_acc_err / rate_imu          ;...
+            imu_gyr_err                     ], [nCars,1]));
 
-
-        Fs = [  1, 0, 0, dt, 0, 0;...
-                0, 1, 0, 0, dt, 0;...
-                0, 0, 1, 0, 0, dt;...
-                0, 0, 0, 1, 0, 0;...
-                0, 0, 0, 0, 1, 0;...
-                0, 0, 0, 0, 0, 1];
+        Fs = [  1,  0,  0, dt,  0,  0   ;...
+                0,  1,  0,  0, dt,  0   ;...
+                0,  0,  1,  0,  0, dt   ;...
+                0,  0,  0,  1,  0,  0   ;...
+                0,  0,  0,  0,  1,  0   ;...
+                0,  0,  0,  0,  0,  1];
         Fc = repmat({Fs},1,nCars);
         F = blkdiag(Fc{:});
         
@@ -76,7 +75,7 @@ else
     end
 
     % Pacmod Step at 30 Hz
-    if mod(t, rate/rate_mdl) == 0
+    if mod(t, rate/rate_mdl) == 0 && sensors(2)
 
         z_vel = x_truth(4,:,t)' ...
             + normrnd(0, enc_err, [nCars, nSims]);
@@ -86,7 +85,7 @@ else
         z = [   z_vel;...
                 z_vel.*tan(z_del) / wb ];
 
-        kf_vel = sqrt( CKF_x([1:nCars]*6-2,:,t).^2 + CKF_x([1:nCars]*6-1,:,t).^2 );
+        kf_vel = sqrt( CKF_x((1:nCars)*6-2,:,t).^2 + CKF_x((1:nCars)*6-1,:,t).^2 );
         
         H = zeros(2*nCars,6*nCars,nSims);
         for i = 1:nCars
@@ -97,7 +96,7 @@ else
         end
         
         h = [   kf_vel; ...
-                CKF_x([1:nCars]*6,:,t)];
+                CKF_x((1:nCars)*6,:,t)];
 
         
         R = zeros(2*nCars, 2*nCars, nSims);
@@ -119,10 +118,7 @@ else
     end
 
     % GPS step at 10 Hz 
-    if mod(t, rate/rate_gps) == 0 
-
-  
-
+    if mod(t, rate/rate_gps) == 0 && sensors(3)
         
         z_x = x_truth(1,:,t)' ...
             + normrnd(0, gps_per, [nCars, nSims]);
@@ -135,17 +131,8 @@ else
         
         z = [ z_x; z_y; z_t; z_v ];
 
-        kf_vel = sqrt( CKF_x([1:nCars]*6-2,:,t).^2 +...
-                       CKF_x([1:nCars]*6-1,:,t).^2 );
-      
-                   
-%         H = zeros(2*nCars,6*nCars,nSims);
-%         for i = 1:nCars
-%             m = (i-1)*6;
-%             H(i, m+4, :) = CKF_x(m+4,:,t) ./ kf_vel(i,:);
-%             H(i, m+5, :) = CKF_x(m+5,:,t) ./ kf_vel(i,:);
-%             H(i+nCars, m+6, :) = 1;
-%         end
+        kf_vel = sqrt( CKF_x((1:nCars)*6-2,:,t).^2 +...
+                       CKF_x((1:nCars)*6-1,:,t).^2 );
 
         H = zeros(4*nCars,6*nCars,nSims);
         for i = 1:nCars
@@ -157,9 +144,6 @@ else
             H(i+nCars*3, m+5, :) = CKF_x(m+5,:,t) ./ kf_vel(i,:);
         end
         
-%         h = [   kf_vel; ...
-%                 CKF_x([1:nCars]*6,:,t)];        
-        
         h = zeros(4*nCars,nSims);
         for i = 1:nCars
             h(i+nCars*0, :) = CKF_x((i-1)*6+1, :, t);
@@ -167,13 +151,6 @@ else
             h(i+nCars*2, :) = CKF_x((i-1)*6+3, :, t);
         end
         h(3*nCars+1:4*nCars,:) = kf_vel;
-            
-%         
-%         R = zeros(2*nCars, 2*nCars, nSims);
-%         for i = 1:nSims
-%             R = diag([repmat(enc_err, [nCars, 1]); ...
-%                       str_err .* z_vel(:,1) / wb]);
-%         end 
 
         R = diag([  ...
             repmat(gps_per, [nCars,1]);...
@@ -185,12 +162,10 @@ else
             (pagemtimes(pagemtimes(H,CKF_P(:,:,:)),'none',H,'transpose') + R));
 
         CKF_x(:,:,t) = CKF_x(:,:,t) + ...
-            reshape(pagemtimes(K,reshape(z - h, [nCars*2, 1, nSims])), [6*nCars, nSims]);
+            reshape(pagemtimes(K,reshape(z - h, [nCars*4, 1, nSims])), [6*nCars, nSims]);
        
         CKF_P(:,:,:) = pagemtimes((repmat(eye(6*nCars), [1,1,nSims]) - pagemtimes(K,H))  , CKF_P(:,:,:));
 
-        
-        
         clear z_x z_y z_t z_v z kf_vel H h R K
     end
 end

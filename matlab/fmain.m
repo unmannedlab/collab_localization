@@ -1,16 +1,16 @@
-function [out] = fmain(nSims)
+function [out] = fmain(nSims, sensors)
 
     addpath('algorithms');
     addpath('input');
     addpath('output');
     addpath('src');
 
-    runtime = 20;
+    runtime = 5;
     SF = -0;
     plt = false;
     sve = false;
 
-    scs; 
+    lone; 
     preprocessor;
 
     for t=1:length(ticks)
@@ -26,10 +26,10 @@ function [out] = fmain(nSims)
 
     postprocessor;
 
-    out.EKF = EKF_m;
-%     out.DCL = DCL_m;
-%     out.DC2 = DC2_m;
-    out.CKF = CKF_m;
+    out.EKF = EKF_rmse;
+%     out.DCL = DCL_rmse;
+%     out.DC2 = DC2_rmse;
+    out.CKF = CKF_rmse;
 
 end
 

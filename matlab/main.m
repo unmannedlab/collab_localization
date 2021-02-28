@@ -1,18 +1,20 @@
-% clear; clc; 
+clear; clc; 
 
 addpath('algorithms');
 addpath('input');
 addpath('output');
 addpath('src');
 
-nSims = 10^3;
-runtime = 5;
+nSims = 10^4;
+runtime = 1;
 SF = -0;
-plt = true;
 sve = false;
 
-lone; 
+sensors = [true, true, true, false];
+
+par;
 preprocessor;
+
 tic 
 for t=1:length(ticks)
     Truth;
@@ -27,4 +29,4 @@ end
 toc
 
 postprocessor;
- 
+postplot;

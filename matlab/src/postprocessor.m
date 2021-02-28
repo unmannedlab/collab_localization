@@ -2,17 +2,17 @@ clear accel accel_r F gyro h H K kf_vel mag Q R x0 z z_del z_t z_v z_vel z_x z_y
 
 if exist('EKF_x','var')
     EKF_err = EKF_x(1:3,:,:,:) - repmat(reshape(x_truth(1:3,:,:), [3, nCars, 1, nTicks]), [1, 1, nSims, 1]);
-    EKF_m = reshape(RMSE(EKF_err), [3, nSims]);
+    EKF_rmse = reshape(RMSE(EKF_err), [3, nSims]); clear EKF_err;
 end
 
 if exist('DCL_x','var')
     DCL_err = DCL_x(1:3,:,:,:) - repmat(reshape(x_truth(1:3,:,:), [3, nCars, 1, nTicks]), [1, 1, nSims, 1]);
-    DCL_m = reshape(RMSE(DCL_err), [3, nSims]);
+    DCL_rmse = reshape(RMSE(DCL_err), [3, nSims]); clear DCL_err;
 end
 
 if exist('DC2_x','var')
     DC2_err = DC2_x(1:3,:,:,:) - repmat(reshape(x_truth(1:3,:,:), [3, nCars, 1, nTicks]), [1, 1, nSims, 1]);
-    DC2_m = reshape(RMSE(DC2_err), [3, nSims]);
+    DC2_rmse = reshape(RMSE(DC2_err), [3, nSims]); clear DC2_err;
 end
 
 if exist('CKF_x','var')
@@ -23,67 +23,15 @@ if exist('CKF_x','var')
         m(i*3-0) = i*6-3;
     end
     CKF_err = CKF_x(m,:,:) - repmat(reshape(x_truth(1:3,:,:), [3*nCars, 1, nTicks]), [1, nSims, 1]);
-    CKF_m = reshape(RMSE(reshape(CKF_err, [3,nCars,nSims,nTicks])), [3, nSims]);
+    CKF_rmse = reshape(RMSE(reshape(CKF_err, [3,nCars,nSims,nTicks])), [3, nSims]);
 end
 
 if exist('EKF_LMK_x','var')
     EKF_LMK_err = EKF_LMK_x(1:3,:,:,:) - repmat(reshape(x_truth(1:3,:,:), [3, nCars, 1, nTicks]), [1, 1, nSims, 1]);
-    EKF_LMK_m = reshape(mean(EKF_LMK_err,[2,4]), [3, nSims]);
+    EKF_LMK_rmse = reshape(mean(EKF_LMK_err,[2,4]), [3, nSims]);
 end
 
 if exist('DCL_LMK_x','var')
     DCL_LMK_err = DCL_LMK_x(1:3,:,:,:) - repmat(reshape(x_truth(1:3,:,:), [3, nCars, 1, nTicks]), [1, 1, nSims, 1]);
-    DCL_LMK_m = reshape(mean(DCL_LMK_err,0,[2,4]), [3, nSims]);
-end
-
-nBins = 20;
-
-if plt
-    figure(1); clf; legend; xlabel('X Error'); legend;
-    figure(2); clf; legend; xlabel('Y Error');
-    figure(3); clf; legend; xlabel('Theta Error');    
-    
-    if exist('EKF_x','var')
-        figure(1); hold on; histogram(EKF_m(1,:), 'DisplayName', 'EKF'); hold off;
-        figure(2); hold on; histogram(EKF_m(2,:), 'DisplayName', 'EKF'); hold off;
-        figure(3); hold on; histogram(EKF_m(3,:), 'DisplayName', 'EKF'); hold off;
-    end
-
-    if exist('DCL_x','var')
-        figure(1); hold on; histogram(DCL_m(1,:), 'DisplayName', 'DCL'); hold off;
-        figure(2); hold on; histogram(DCL_m(2,:), 'DisplayName', 'DCL'); hold off;
-        figure(3); hold on; histogram(DCL_m(3,:), 'DisplayName', 'DCL'); hold off;
-    end
-
-    if exist('DC2_x','var')
-        figure(1); hold on; histogram(DC2_m(1,:), 'DisplayName', 'DC2'); hold off;
-        figure(2); hold on; histogram(DC2_m(2,:), 'DisplayName', 'DC2'); hold off;
-        figure(3); hold on; histogram(DC2_m(3,:), 'DisplayName', 'DC2'); hold off;
-    end
-
-    if exist('CKF_x','var')
-        figure(1); hold on; histogram(CKF_m(1,:), 'DisplayName', 'CKF'); hold off;
-        figure(2); hold on; histogram(CKF_m(2,:), 'DisplayName', 'CKF'); hold off;
-        figure(3); hold on; histogram(CKF_m(3,:), 'DisplayName', 'CKF'); hold off;
-    end
-
-    if exist('EKF_LMK_x','var')
-        figure(1); hold on; histogram(EKF_LMK_m(1,:), 'DisplayName', 'EKF_LMK'); hold off;
-        figure(2); hold on; histogram(EKF_LMK_m(2,:), 'DisplayName', 'EKF_LMK'); hold off;
-        figure(3); hold on; histogram(EKF_LMK_m(3,:), 'DisplayName', 'EKF_LMK'); hold off;
-    end
-
-    if exist('DCL_LMK_x','var')
-        figure(1); hold on; histogram(DCL_LMK_m(1,:), 'DisplayName', 'DCL_LMK'); hold off;
-        figure(2); hold on; histogram(DCL_LMK_m(2,:), 'DisplayName', 'DCL_LMK'); hold off;
-        figure(3); hold on; histogram(DCL_LMK_m(3,:), 'DisplayName', 'DCL_LMK'); hold off;
-    end
-
-end
-
-if sve 
-    fn = [datestr(now,'yyyy_mm_dd-HH_MM-'),in_name,'-',num2str(nSims),'.mat'];
-    ff = fullfile('output',fn);
-
-    save(ff, 'std_err');
+    DCL_LMK_rmse = reshape(mean(DCL_LMK_err,0,[2,4]), [3, nSims]);
 end
