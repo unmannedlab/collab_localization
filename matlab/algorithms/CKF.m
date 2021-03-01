@@ -87,7 +87,7 @@ else
 
         kf_vel = sqrt( CKF_x((1:nCars)*6-2,:,t).^2 + CKF_x((1:nCars)*6-1,:,t).^2 );
         
-        H = zeros(2*nCars,6*nCars,nSims);
+        H = zeros(2*nCars, 6*nCars, nSims);
         for i = 1:nCars
             m = (i-1)*6;
             H(i, m+4, :) = CKF_x(m+4,:,t) ./ kf_vel(i,:);
@@ -130,7 +130,7 @@ else
         kf_vel = sqrt( CKF_x((1:nCars)*6-2,:,t).^2 +...
                        CKF_x((1:nCars)*6-1,:,t).^2 );
 
-        H = zeros(4*nCars,6*nCars,nSims);
+        H = zeros(4*nCars, 6*nCars, nSims);
         for i = 1:nCars
             m = (i-1)*6;
             H(i+nCars*0, m+1, :) = 1;
@@ -166,35 +166,31 @@ else
     end
 
     % UWB Update Step
-    if mod(t, rate/rate_uwb) == 0
+    if mod(t, rate/rate_uwb) == 0 && nCars > 1
+        B = bcombs(nCars);
         
-%         z_x = repmat(x_truth(1,:,t),[nLmk,1,nSims]) - lmks(:,1);
-%         z_y = repmat(x_truth(2,:,t),[nLmk,1,nSims]) - lmks(:,2);
-% 
-%         z = sqrt(z_x.^2 + z_y.^2) ...
-%             + normrnd(0, uwb_err, [nLmk, nCars, nSims]);
-%         
-%         z = max(z,0);
-%         
-%         h_x = repmat(EKF_LMK_x(1,:,:,t),[nLmk,1,1]) - lmks(:,1);
-%         h_y = repmat(EKF_LMK_x(2,:,:,t),[nLmk,1,1]) - lmks(:,2);
-%         
-%         h = sqrt(h_x.^2 + h_y.^2);
-%         
-%         H = zeros(nLmk,6,nCars,nSims);
-%         H(:,1,:,:) = h_x ./ sqrt(h);
-%         H(:,2,:,:) = h_y ./ sqrt(h);
-%         
-%         R = repmat(eye(nLmk)*uwb_err, [1, 1, nCars, nSims]);
-%         
-%         K = pagediv(pagemtimes(EKF_LMK_P(:,:,:,:),'none',H,'transpose'), ...
-%             (pagemtimes(pagemtimes(H,EKF_LMK_P(:,:,:,:)),'none',H,'transpose') + R));
-% 
-%         EKF_LMK_x(:,:,:,t) = EKF_LMK_x(:,:,:,t) + ...
-%             reshape(pagemtimes(K,reshape(z - h, [nLmk, 1, nCars, nSims])), [6, nCars, nSims]);
-%         
-%         EKF_LMK_P(:,:,:,:) = pagemtimes((repmat(eye(6), [1,1, nCars, nSims]) - pagemtimes(K,H))  , EKF_LMK_P(:,:,:,:));
-% 
-%         clear z_x z_y z H h R K
+        z_x = B * x_truth(1,:,t)';
+        z_y = B * x_truth(2,:,t)';
+
+        z = sqrt(z_x.^2 + z_y.^2) ...
+            + normrnd(0, uwb_err, [size(B,1), nSims]);
+
+        h_x = B * CKF_x((1:nCars)*6-5,:,t);
+        h_y = B * CKF_x((1:nCars)*6-4,:,t);
+              
+        h = sqrt(h_x.^2 + h_y.^2);
+        
+        H = zeros(size(B,1), 6*nCars, nSims);        
+        H(:,(1:nCars)*6-5,:) = repmat(B, [1,1,nSims]) .* repmat(reshape(h_x ./ sqrt(h), [size(B,1), 1, nSims]), [1, nCars, 1]);
+        H(:,(1:nCars)*6-4,:) = repmat(B, [1,1,nSims]) .* repmat(reshape(h_y ./ sqrt(h), [size(B,1), 1, nSims]), [1, nCars, 1]);
+
+        R = repmat(eye(size(B,1))*uwb_err, [1, 1, nSims]);
+        
+        K = pagediv(pagemtimes(CKF_P(:,:,:),'none',H,'transpose'), (pagemtimes(pagemtimes(H,CKF_P(:,:,:)),'none',H,'transpose') + R));
+
+        CKF_x(:,:,t) = CKF_x(:,:,t) + reshape(pagemtimes(K,reshape(z - h, [size(B,1), 1, nSims])), [6*nCars, nSims]);
+        CKF_P(:,:,:) = pagemtimes((repmat(eye(6*nCars), [1,1,nSims]) - pagemtimes(K,H))  , CKF_P(:,:,:));
+
+        clear z_x z_y z H h R K
     end
 end

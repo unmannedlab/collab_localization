@@ -5,8 +5,8 @@ addpath('input');
 addpath('output');
 addpath('src');
 
-nSims = 10^4;
-runtime = 1;
+nSims = 10^3;
+runtime = 10;
 SF = -0;
 sve = false;
 
@@ -19,7 +19,7 @@ tic
 for t=1:length(ticks)
     Truth;
     EKF;
-%     DCL;
+    DCL;
 %     DC2;
     CKF;
     
