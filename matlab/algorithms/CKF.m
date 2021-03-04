@@ -1,15 +1,13 @@
 if t == 1
-    CKF_x = zeros(6*nCars, nSims, nTicks);
-    CKF_P = zeros(6*nCars, 6*nCars, nSims);
     
     x = zeros(6,nCars);
     x(1:3,:) = x_truth(1:3,:,t);
     x(4,:) = -sin(x_truth(3,:,t)).*x_truth(4,:,t);
     x(5,:) =  cos(x_truth(3,:,t)).*x_truth(4,:,t);
-    
+    CKF_x = zeros(6*nCars, nSims, nTicks);
     CKF_x(:,:,t) = repmat(reshape(x, [6*nCars,1]), [1, nSims]);
     
-    CKF_P(:,:,:,t) = repmat(... 
+    CKF_P(:,:,:,t) = repmat(...
             diag(...
             repmat([imu_acc_err / 2 / rate_imu^2    ;...
                     imu_acc_err / 2 / rate_imu^2    ;...
@@ -166,7 +164,7 @@ else
     end
 
     % UWB Update Step
-    if mod(t, rate/rate_uwb) == 0 && nCars > 1
+    if mod(t, rate/rate_uwb) == 0 && nCars > 1 && sensors(4)
         B = bcombs(nCars);
         
         z_x = B * x_truth(1,:,t)';
@@ -186,7 +184,7 @@ else
 
         R = repmat(eye(size(B,1))*uwb_err, [1, 1, nSims]);
         
-        K = pagediv(pagemtimes(CKF_P(:,:,:),'none',H,'transpose'), (pagemtimes(pagemtimes(H,CKF_P(:,:,:)),'none',H,'transpose') + R));
+        K = pagediv( pagemtimes( CKF_P(:,:,:),'none',H,'transpose'), ( pagemtimes( pagemtimes( H,CKF_P(:,:,:)), 'none', H, 'transpose') + R ) );
 
         CKF_x(:,:,t) = CKF_x(:,:,t) + reshape(pagemtimes(K,reshape(z - h, [size(B,1), 1, nSims])), [6*nCars, nSims]);
         CKF_P(:,:,:) = pagemtimes((repmat(eye(6*nCars), [1,1,nSims]) - pagemtimes(K,H))  , CKF_P(:,:,:));

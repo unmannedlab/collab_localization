@@ -10,13 +10,13 @@ function [out] = fmain(nSims, sensors)
     plt = false;
     sve = false;
 
-    lone; 
+    par;
     preprocessor;
 
     for t=1:length(ticks)
         Truth;
         EKF;
-%         DCL;
+        DCL;
 %         DC2;
         CKF;
 
@@ -27,7 +27,7 @@ function [out] = fmain(nSims, sensors)
     postprocessor;
 
     out.EKF = EKF_rmse;
-%     out.DCL = DCL_rmse;
+    out.DCL = DCL_rmse;
 %     out.DC2 = DC2_rmse;
     out.CKF = CKF_rmse;
 
