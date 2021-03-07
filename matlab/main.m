@@ -1,11 +1,11 @@
-clear; clc; 
+% clear; clc; 
 
 addpath('algorithms');
 addpath('input');
 addpath('output');
 addpath('src');
 
-nSims = 10^4;
+nSims = 10^2;
 runtime = 10;
 SF = -0;
 sve = false;
@@ -18,7 +18,7 @@ preprocessor;
 tic 
 for t=1:length(ticks)
     Truth;
-%     EKF;
+    EKF;
     DCL;
 %     DC2;
     CKF;
@@ -29,4 +29,4 @@ end
 toc
 
 postprocessor;
-% postplot;
+postplot;

@@ -67,7 +67,7 @@ else
         Fc = repmat({Fs},1,nCars);
         F = blkdiag(Fc{:});
         
-        CKF_P(:,:,:) = pagemtimes(pagemtimes(F, CKF_P(:,:,:)),'none', F, 'transpose') + Q;
+        CKF_P = pagemtimes(pagemtimes(F, CKF_P),'none', F, 'transpose') + Q;
         
         clear accel accel_r gyro mag theta Q F Fs Fc
     end
@@ -104,13 +104,13 @@ else
         end 
         
 
-        K = pagediv(pagemtimes(CKF_P(:,:,:),'none',H,'transpose'), ...
-            (pagemtimes(pagemtimes(H,CKF_P(:,:,:)),'none',H,'transpose') + R));
+        K = pagediv(pagemtimes(CKF_P,'none',H,'transpose'), ...
+            (pagemtimes(pagemtimes(H,CKF_P),'none',H,'transpose') + R));
 
         CKF_x(:,:,t) = CKF_x(:,:,t) + ...
             reshape(pagemtimes(K,reshape(z - h, [nCars*2, 1, nSims])), [6*nCars, nSims]);
        
-        CKF_P(:,:,:) = pagemtimes((repmat(eye(6*nCars), [1,1,nSims]) - pagemtimes(K,H))  , CKF_P(:,:,:));
+        CKF_P = pagemtimes((repmat(eye(6*nCars), [1,1,nSims]) - pagemtimes(K,H))  , CKF_P);
 
         clear z_vel z_del z kf_vel H h R K
     end
@@ -152,13 +152,13 @@ else
             repmat(gps_her, [nCars,1]);...
             repmat(gps_ver, [nCars,1])]);
 
-        K = pagediv(pagemtimes(CKF_P(:,:,:),'none',H,'transpose'), ...
-            (pagemtimes(pagemtimes(H,CKF_P(:,:,:)),'none',H,'transpose') + R));
+        K = pagediv(pagemtimes(CKF_P,'none',H,'transpose'), ...
+            (pagemtimes(pagemtimes(H,CKF_P),'none',H,'transpose') + R));
 
         CKF_x(:,:,t) = CKF_x(:,:,t) + ...
             reshape(pagemtimes(K,reshape(z - h, [nCars*4, 1, nSims])), [6*nCars, nSims]);
        
-        CKF_P(:,:,:) = pagemtimes((repmat(eye(6*nCars), [1,1,nSims]) - pagemtimes(K,H))  , CKF_P(:,:,:));
+        CKF_P = pagemtimes((repmat(eye(6*nCars), [1,1,nSims]) - pagemtimes(K,H))  , CKF_P);
 
         clear z_x z_y z_t z_v z kf_vel H h R K
     end
@@ -184,10 +184,10 @@ else
 
         R = repmat(eye(size(B,1))*uwb_err, [1, 1, nSims]);
         
-        K = pagediv( pagemtimes( CKF_P(:,:,:),'none',H,'transpose'), ( pagemtimes( pagemtimes( H,CKF_P(:,:,:)), 'none', H, 'transpose') + R ) );
+        K = pagediv( pagemtimes( CKF_P,'none',H,'transpose'), ( pagemtimes( pagemtimes( H,CKF_P), 'none', H, 'transpose') + R ) );
 
         CKF_x(:,:,t) = CKF_x(:,:,t) + reshape(pagemtimes(K,reshape(z - h, [size(B,1), 1, nSims])), [6*nCars, nSims]);
-        CKF_P(:,:,:) = pagemtimes((repmat(eye(6*nCars), [1,1,nSims]) - pagemtimes(K,H))  , CKF_P(:,:,:));
+        CKF_P = pagemtimes((repmat(eye(6*nCars), [1,1,nSims]) - pagemtimes(K,H))  , CKF_P);
 
         clear z_x z_y z H h R K
     end
