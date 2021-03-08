@@ -87,7 +87,7 @@ else
         R(1,1,:,:) = enc_err;
         R(2,2,:,:) = str_err * z_vel / wb;
 
-        K = pagediv( pagemtimes(EKF_P,'none',H,'transpose'), (pagemtimes( pagemtimes(H,EKF_P), 'none', H, 'transpose') + R));
+        K = pageDiv( pagemtimes(EKF_P,'none',H,'transpose'), (pagemtimes( pagemtimes(H,EKF_P), 'none', H, 'transpose') + R));
 
         EKF_x(:,:,:,t) = EKF_x(:,:,:,t) + reshape( pagemtimes( K, reshape((z-h), [2, 1, nCars, nSims])), [6, nCars, nSims]);
         EKF_P = pagemtimes( (repmat(eye(6), [1,1,nCars,nSims]) - pagemtimes(K,H)), EKF_P);
@@ -123,7 +123,7 @@ else
             gps_her;...
             gps_ver]), [1, 1, nCars, nSims]);
 
-        K = pagediv( pagemtimes(EKF_P,'none',H,'transpose'), ( pagemtimes( pagemtimes( H, EKF_P), 'none', H, 'transpose') + R ) );
+        K = pageDiv( pagemtimes(EKF_P,'none',H,'transpose'), ( pagemtimes( pagemtimes( H, EKF_P), 'none', H, 'transpose') + R ) );
 
         EKF_x(:,:,:,t) = EKF_x(:,:,:,t) + reshape( pagemtimes( K, reshape(z - h, [4, 1, nCars, nSims])), [6, nCars, nSims] );
         EKF_P = pagemtimes( ( repmat( eye(6), [1,1,nCars,nSims] ) - pagemtimes(K,H) ), EKF_P );

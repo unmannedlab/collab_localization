@@ -1,4 +1,4 @@
-function [B] = pagediag(A, vargin)
+function [B] = pageDiag(A, varargin)
     if length(vargin) == 1
         error('Not enough inputs');
     elseif length(vargin) == 2

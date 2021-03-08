@@ -4,15 +4,15 @@ if t == 1
     DCL_x(1:3,:,:,t) = repmat(x_truth(1:3,:,t), [1,1,nSims]);
     DCL_x(4,:,:,t)   = repmat(-sin(x_truth(3,:,t)) .* x_truth(4,:,t), [1,1,nSims]);
     DCL_x(5,:,:,t)   = repmat( cos(x_truth(3,:,t)) .* x_truth(4,:,t), [1,1,nSims]);
-    
-    DCL_P = repmat(... 
+                   
+    DCL_s = repmat(... 
             diag([  imu_acc_err / 2 / rate_imu^2    ;...
                     imu_acc_err / 2 / rate_imu^2    ;...
                     imu_gyr_err / rate_imu          ;...
                     imu_acc_err / rate_imu          ;...
                     imu_acc_err / rate_imu          ;...
                     imu_gyr_err]), [1,1,nCars,nCars,nSims]);
-
+                
 else
 
     % Predict Step at 400 Hz
@@ -49,23 +49,21 @@ else
                     imu_acc_err / rate_imu          ;...
                     imu_gyr_err]);
 
+
         F = [   1,  0,  0, dt,  0,  0  ;...
                 0,  1,  0,  0, dt,  0  ;...
                 0,  0,  1,  0,  0, dt  ;...
                 0,  0,  0,  1,  0,  0  ;...
                 0,  0,  0,  0,  1,  0  ;...
                 0,  0,  0,  0,  0,  1 ];
-            
-        DCL_P = pagemtimes( pagemtimes( F, DCL_P),'none', F, 'transpose') + Q;
-        
-        A = ones(nCars) - eye(nCars);
-%         Maybe store all covariances w/ cross estimates in one matrix: DCL_P
+
+        DCL_s = pagemtimes( pagemtimes( F, DCL_s),'none', F, 'transpose') + Q;
         
         clear accel accel_r gyro mag theta Q F
     end
 
     % Pacmod Step at 30 Hz
-    if mod(t, rate/rate_mdl) == 0 && sensors(2)
+    if mod(t, rate/rate_mdl) == 0 && sensors(2) 
 
         z_vel = x_truth(4,:,t) + normrnd(0, enc_err, [1, nCars, nSims]);
         z_del = del(t,:) + normrnd(0, imu_mag_err, [1, nCars, nSims]);
@@ -85,13 +83,20 @@ else
         R = zeros(2,2,nCars,nSims);
         R(1,1,:,:) = enc_err;
         R(2,2,:,:) = str_err * z_vel / wb;
-
-        K = pagediv( pagemtimes(DCL_P,'none',H,'transpose'), (pagemtimes( pagemtimes(H,DCL_P), 'none', H, 'transpose') + R));
-
-        DCL_x(:,:,:,t) = DCL_x(:,:,:,t) + reshape( pagemtimes( K, reshape((z-h), [2, 1, nCars, nSims])), [6, nCars, nSims]);
-        DCL_P = pagemtimes( (repmat(eye(6), [1,1,nCars,nSims]) - pagemtimes(K,H)), DCL_P);
         
-        clear z_vel z_del z kf_vel H h R K
+        for i = 1:nCars
+            sigma = reshape(DCL_s(:,:,i,i,:), [6,6,nSims]);
+            Hr = reshape(H(:,:,i,:), [2,6,nSims]);
+            Rr = reshape(R(:,:,i,:), [2,2,nSims]);
+            
+            K   = pageDiv( pagemtimes(sigma,'none', Hr,'transpose'),...
+                  (pagemtimes( pagemtimes( Hr, sigma), 'none', Hr, 'transpose') + Rr));
+
+            DCL_x(:,i,:,t) = DCL_x(:,i,:,t) + pagemtimes( K, (z(:,i,:)-h(:,i,:)));
+            DCL_s(:,:,i,:,:) = pagemtimes( reshape(repmat(eye(6), [1,1,nSims]) - pagemtimes(K, Hr), [6,6,1,1,nSims]), DCL_s(:,:,i,:,:));
+        end
+        
+        clear i z_vel z_del z kf_vel H h R K sigma Hr Rr
     end
 
     % GPS step at 10 Hz
@@ -122,40 +127,66 @@ else
             gps_her;...
             gps_ver]), [1, 1, nCars, nSims]);
 
-        K = pagediv( pagemtimes(DCL_P,'none',H,'transpose'), ( pagemtimes( pagemtimes( H, DCL_P), 'none', H, 'transpose') + R ) );
+        for i = 1:nCars
+            sigma = reshape(DCL_s(:,:,i,i,:), [6,6,nSims]);
+            Hr = reshape(H(:,:,i,:), [4,6,nSims]);
+            Rr = reshape(R(:,:,i,:), [4,4,nSims]);
+            
+            K   = pageDiv( pagemtimes(sigma,'none', Hr,'transpose'), (pagemtimes( pagemtimes( Hr, sigma), 'none', Hr, 'transpose') + Rr));
 
-        DCL_x(:,:,:,t) = DCL_x(:,:,:,t) + reshape( pagemtimes( K, reshape(z - h, [4, 1, nCars, nSims])), [6, nCars, nSims] );
-        DCL_P = pagemtimes( ( repmat( eye(6), [1,1,nCars,nSims] ) - pagemtimes(K,H) ), DCL_P );
-
-        clear z_x z_y z_t z_v z kf_vel H h R K
+            DCL_x(:,i,:,t) = DCL_x(:,i,:,t) + pagemtimes( K, (z(:,i,:)-h(:,i,:)));
+            DCL_s(:,:,i,:,:) = pagemtimes( reshape(repmat(eye(6), [1,1,nSims]) - pagemtimes(K, Hr), [6,6,1,1,nSims]), DCL_s(:,:,i,:,:));
+        end
+        
+        clear z_x z_y z_t z_v z kf_vel H h R K sigma Hr Rr i 
     end
     
     % UWB Update Step
     if mod(t, rate/rate_uwb) == 0 && nCars > 1 && sensors(4)
-        B = bcombs(nCars);
+        B = nchoosek([1:nCars],2);
+        
+        for i = 1:size(B,1)
+            z_x = x_truth(1,B(i,1),t) - x_truth(1,B(i,2),t);
+            z_y = x_truth(2,B(i,1),t) - x_truth(2,B(i,2),t);
+            z = reshape(sqrt(z_x.^2 + z_y.^2) + normrnd(0, uwb_err, [1,nSims]), [1,1,nSims]);
 
-        z_x = B * x_truth(1,:,t)';
-        z_y = B * x_truth(2,:,t)';
+            h_x = DCL_x(1, B(i,1), :, t) - DCL_x(1, B(i,2), :, t);
+            h_y = DCL_x(2, B(i,1), :, t) - DCL_x(2, B(i,2), :, t);
+            h = sqrt(h_x.^2 + h_y.^2);
+            
+            Sigma_ii = DCL_s(:,:,B(i,1),B(i,1),:);
+            Sigma_jj = DCL_s(:,:,B(i,2),B(i,2),:);
+            Sigma_ij = pagemtimes(DCL_s(:,:,B(i,1),B(i,2),:), 'none', DCL_s(:,:,B(i,2),B(i,1),:), 'transpose');
+            Sigma_aa = reshape([Sigma_ii, Sigma_ij; pagetranspose(Sigma_ij), Sigma_jj], [12,12,nSims]);
+            
+            if any(reshape(isnan(Sigma_aa), [prod(size(Sigma_aa)),1]))
+                error('Bad')
+            end
+            
+            H = zeros(1,12, nSims);
+            H(1,1,:) =   h_x ./ sqrt(h);
+            H(1,7,:) = - h_x ./ sqrt(h);
+            H(1,2,:) =   h_y ./ sqrt(h);
+            H(1,8,:) = - h_y ./ sqrt(h);
+            
+            R = repmat(uwb_err, [1,1,nSims]);
+            
+            Ka = pageDiv( pagemtimes(Sigma_aa, 'none', H, 'transpose') , pagemtimes(H, pagemtimes(Sigma_aa, 'none', H, 'transpose')) + R );
+            update = pagemtimes(Ka, z - h);
+            DCL_x(:, B(i,1), :, t) = DCL_x(:, B(i,1), :, t) + update(1:6,1,:);
+            DCL_x(:, B(i,2), :, t) = DCL_x(:, B(i,2), :, t) + update(7:12,1,:);
+            
+            Sigma_t = pagemtimes(repmat(eye(12), [1,1,nSims]) - pagemtimes(Ka, H), Sigma_aa);
+            
+            DCL_s(:,:,B(i,1),setdiff(1:nCars, B(i,:)), :) = pagemtimes(pageDiv(Sigma_t(1:6,  1:6,  :), Sigma_ii), DCL_s(:,:,B(i,1),setdiff(1:nCars, B(i,:)), :));
+            DCL_s(:,:,B(i,2),setdiff(1:nCars, B(i,:)), :) = pagemtimes(pageDiv(Sigma_t(7:12, 7:12, :), Sigma_jj), DCL_s(:,:,B(i,2),setdiff(1:nCars, B(i,:)), :));
 
-        z = sqrt(z_x.^2 + z_y.^2) ...
-            + normrnd(0, uwb_err, [size(B,1), nSims]);
-
-        h_x = B * reshape(DCL_x(1,:,:,t), [nCars, nSims]);
-        h_y = B * reshape(DCL_x(2,:,:,t), [nCars, nSims]);
-
-        h = sqrt(h_x.^2 + h_y.^2);
-
-        H = zeros(size(B,1), 6, nCars, nSims);
-        H(:,1,:,:) = repmat(B, [1,1,nSims]) .* repmat(reshape(h_x ./ sqrt(h), [size(B,1), 1, nSims]), [1, nCars, 1]);
-        H(:,2,:,:) = repmat(B, [1,1,nSims]) .* repmat(reshape(h_y ./ sqrt(h), [size(B,1), 1, nSims]), [1, nCars, 1]);
-
-        R = repmat(eye(size(B,1))*uwb_err, [1, 1, nCars, nSims]);
-
-        K = pagediv( pagemtimes( DCL_P,'none',H,'transpose'), ( pagemtimes( pagemtimes( H, DCL_P), 'none', H, 'transpose') + R ) );
-
-        DCL_x(:,:,:,t) = DCL_x(:,:,:,t) + reshape( pagemtimes( K, repmat(reshape(z-h, [size(B,1),1, 1, nSims]), [1,1,nCars,1])), [6, nCars, nSims] );
-        DCL_P = pagemtimes( ( repmat( eye(6), [1,1,nCars,nSims] ) - pagemtimes(K,H) ), DCL_P );
-
-        clear z_x z_y z H h R K
+            DCL_s(:,:,B(i,1),B(i,1),:) = Sigma_t(1:6,  1:6,  :);
+            DCL_s(:,:,B(i,2),B(i,2),:) = Sigma_t(7:12, 7:12, :);
+            DCL_s(:,:,B(i,1),B(i,2),:) = Sigma_t(1:6,  7:12, :);
+            DCL_s(:,:,B(i,2),B(i,1),:) = repmat(eye(6), [1,1,nSims]);
+        
+        end
+        clear z_x z_y z H h R K i 
     end
 end

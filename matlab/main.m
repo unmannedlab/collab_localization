@@ -5,14 +5,14 @@ addpath('input');
 addpath('output');
 addpath('src');
 
-nSims = 10^2;
-runtime = 10;
+nSims = 10^4;
+runtime = 5;
 SF = -0;
 sve = false;
 
 sensors = [true, true, true, true];
 
-par;
+scs;
 preprocessor;
 
 tic 

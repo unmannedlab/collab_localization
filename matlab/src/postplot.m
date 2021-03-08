@@ -57,7 +57,7 @@ if exist('DCL_LMK_rmse','var')
 end
 
 figure(1); clf;
-nBins = 20;
+nBins = 30;
 xEdges = linspace(round(x_min, 2), round(x_max, 2), nBins+1);
 yEdges = linspace(round(y_min, 2), round(y_max, 2), nBins+1);
 tEdges = linspace(round(t_min, 2), round(t_max, 3), nBins+1);
