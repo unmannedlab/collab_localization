@@ -55,9 +55,10 @@ if exist('DCL_LMK_rmse','var')
     y_min = min(y_min, min(DCL_LMK_rmse(2,:)));
     t_min = min(t_min, min(DCL_LMK_rmse(3,:)));
 end
-
+x_max = 0.4;
+y_max = 0.4;
 figure(1); clf;
-nBins = 30;
+nBins = 40;
 xEdges = linspace(round(x_min, 2), round(x_max, 2), nBins+1);
 yEdges = linspace(round(y_min, 2), round(y_max, 2), nBins+1);
 tEdges = linspace(round(t_min, 2), round(t_max, 3), nBins+1);
@@ -101,3 +102,6 @@ end
 subplot(1,2,1); legend; xlabel('X Error');
 subplot(1,2,2); legend; xlabel('Y Error');
 % subplot(1,3,3); legend; xlabel('Theta Error');
+
+
+clear x_max x_min y_max y_min t_max t_min

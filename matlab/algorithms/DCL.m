@@ -159,10 +159,6 @@ else
             Sigma_ij = pagemtimes(DCL_s(:,:,B(i,1),B(i,2),:), 'none', DCL_s(:,:,B(i,2),B(i,1),:), 'transpose');
             Sigma_aa = reshape([Sigma_ii, Sigma_ij; pagetranspose(Sigma_ij), Sigma_jj], [12,12,nSims]);
             
-            if any(reshape(isnan(Sigma_aa), [prod(size(Sigma_aa)),1]))
-                error('Bad')
-            end
-            
             H = zeros(1,12, nSims);
             H(1,1,:) =   h_x ./ sqrt(h);
             H(1,7,:) = - h_x ./ sqrt(h);
@@ -187,6 +183,6 @@ else
             DCL_s(:,:,B(i,2),B(i,1),:) = repmat(eye(6), [1,1,nSims]);
         
         end
-        clear z_x z_y z H h R K i 
+        clear z_x z_y z H h R K i B h_x h_y
     end
 end

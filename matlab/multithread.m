@@ -5,7 +5,7 @@ addpath('input');
 addpath('output');
 addpath('src');
 
-nSims = 10^4;
+nSims = 10^3;
 EKF_rmse = zeros(3, nSims/10, 10);
 DCL_rmse = zeros(3, nSims/10, 10);
 % DC2_rmse = zeros(3, nSims/10, 10);

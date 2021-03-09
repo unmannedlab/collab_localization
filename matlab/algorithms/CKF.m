@@ -186,7 +186,7 @@ else
         K = pageDiv( pagemtimes( CKF_P,'none',H,'transpose'), ( pagemtimes( pagemtimes( H,CKF_P), 'none', H, 'transpose') + R ) );
 
         CKF_x(:,:,t) = CKF_x(:,:,t) + reshape(pagemtimes(K,reshape(z - h, [size(B,1), 1, nSims])), [6*nCars, nSims]);
-        CKF_P = pagemtimes((repmat(eye(6*nCars), [1,1,nSims]) - pagemtimes(K,H))  , CKF_P);
+        CKF_P = pagemtimes((repmat(eye(6*nCars), [1,1,nSims]) - pagemtimes(K,H)), CKF_P);
 
         clear z_x z_y z H h R K
     end

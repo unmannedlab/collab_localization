@@ -1,18 +1,18 @@
-% clear; clc; 
+clear; clc; 
 
 addpath('algorithms');
 addpath('input');
 addpath('output');
 addpath('src');
 
-nSims = 10^4;
+nSims = 10^5;
 runtime = 5;
 SF = -0;
 sve = false;
 
 sensors = [true, true, true, true];
 
-scs;
+par;
 preprocessor;
 
 tic 
