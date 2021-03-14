@@ -18,7 +18,7 @@ if t == 1
 else
     
     % Predict Step at 400 Hz
-    if mod(t, rate/rate_imu) == 0 && sensors(1)
+    if mod(t, rate/rate_imu) == 0
         
         accel = [acc(t,:)'; x_truth(4,:,t)'.^2 / wb.* tan(del(t,:))'] ...
             + normrnd(0, imu_acc_err, [2*nCars, nSims]);
@@ -72,7 +72,7 @@ else
     end
 
     % Pacmod Step at 30 Hz
-    if mod(t, rate/rate_mdl) == 0 && sensors(2)
+    if mod(t, rate/rate_mdl) == 0 && sensors(1)
 
         z_vel = x_truth(4,:,t)' ...
             + normrnd(0, enc_err, [nCars, nSims]);
@@ -115,7 +115,7 @@ else
     end
 
     % GPS step at 10 Hz 
-    if mod(t, rate/rate_gps) == 0 && sensors(3)
+    if mod(t, rate/rate_gps) == 0 && sensors(2)
         
         z_x = x_truth(1,:,t)' + normrnd(0, gps_per, [nCars, nSims]);
         z_y = x_truth(2,:,t)' + normrnd(0, gps_per, [nCars, nSims]);
@@ -163,25 +163,23 @@ else
     end
 
     % UWB Update Step
-    if mod(t, rate/rate_uwb) == 0 && nCars > 1 && sensors(4)
+    if mod(t, rate/rate_uwb) == 0 && nCars > 1 && sensors(3)
         B = bcombs(nCars);
         
         z_x = B * x_truth(1,:,t)';
         z_y = B * x_truth(2,:,t)';
-
-        z = sqrt(z_x.^2 + z_y.^2) ...
-            + normrnd(0, uwb_err, [size(B,1), nSims]);
-
+        z = sqrt(z_x.^2 + z_y.^2) + normrnd(0, uwb_err, [size(B,1), nSims]);
+        z = max(z,0);
+        
         h_x = B * CKF_x((1:nCars)*6-5,:,t);
         h_y = B * CKF_x((1:nCars)*6-4,:,t);
-              
         h = sqrt(h_x.^2 + h_y.^2);
         
         H = zeros(size(B,1), 6*nCars, nSims);        
-        H(:,(1:nCars)*6-5,:) = repmat(B, [1,1,nSims]) .* repmat(reshape(h_x ./ sqrt(h), [size(B,1), 1, nSims]), [1, nCars, 1]);
-        H(:,(1:nCars)*6-4,:) = repmat(B, [1,1,nSims]) .* repmat(reshape(h_y ./ sqrt(h), [size(B,1), 1, nSims]), [1, nCars, 1]);
+        H(:,(1:nCars)*6-5,:) = repmat(B, [1,1,nSims]) .* repmat(reshape(h_x ./ h, [size(B,1), 1, nSims]), [1, nCars, 1]);
+        H(:,(1:nCars)*6-4,:) = repmat(B, [1,1,nSims]) .* repmat(reshape(h_y ./ h, [size(B,1), 1, nSims]), [1, nCars, 1]);
 
-        R = repmat(eye(size(B,1))*uwb_err, [1, 1, nSims]);
+        R = eye(size(B,1))*uwb_err;
         
         K = pageDiv( pagemtimes( CKF_P,'none',H,'transpose'), ( pagemtimes( pagemtimes( H,CKF_P), 'none', H, 'transpose') + R ) );
 
@@ -189,5 +187,28 @@ else
         CKF_P = pagemtimes((repmat(eye(6*nCars), [1,1,nSims]) - pagemtimes(K,H))  , CKF_P);
 
         clear z_x z_y z H h R K
+    end
+end
+
+
+function [t] = bcombs(nCars)
+    persistent t_prev n_prev
+    if isempty(t_prev) || n_prev ~= nCars
+        t = zeros(nchoosek(nCars, 2), nCars);
+        m = 1;
+        n = 2;
+        for i = 1:size(t,1)
+            t(i,m) =  1;
+            t(i,n) = -1;
+            n = n + 1;
+            if n > size(t,2)
+                m = m + 1;
+                n = m + 1;
+            end
+        end
+        t_prev = t;
+        n_prev = n;
+    else    
+        t = t_prev;
     end
 end

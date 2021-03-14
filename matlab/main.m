@@ -1,4 +1,4 @@
-% clear; clc; 
+clear; clc; 
 
 addpath('algorithms');
 addpath('input');
@@ -6,11 +6,11 @@ addpath('output');
 addpath('src');
 
 nSims = 10^4;
-runtime = 5;
+runtime = 10;
 SF = -0;
 sve = false;
 
-sensors = [true, true, true, true];
+sensors = [true, true, true];
 
 scs;
 preprocessor;
@@ -19,12 +19,8 @@ tic
 for t=1:length(ticks)
     Truth;
     EKF;
-    DCL;
-%     DC2;
     CKF;
-    
-%     EKF_LMK;
-%     DCL_LMK;
+    DCL;
 end
 toc
 

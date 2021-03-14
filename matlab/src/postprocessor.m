@@ -35,3 +35,20 @@ if exist('DCL_LMK_x','var')
     DCL_LMK_err = DCL_LMK_x(1:3,:,:,:) - repmat(reshape(x_truth(1:3,:,:), [3, nCars, 1, nTicks]), [1, 1, nSims, 1]);
     DCL_LMK_rmse = reshape(mean(DCL_LMK_err,0,[2,4]), [3, nSims]);
 end
+
+
+
+
+function err = RMSE(x)
+    m = size(x,1);
+    n = size(x,3);
+    
+    N = size(x,2) * size(x,4);
+    err = zeros(m, n);
+    
+    for i = 1:m
+        for j = 1:n
+            err(i,j) = sqrt( sum(x(i,:,j,:).^2,[2,4]) / N);
+        end
+    end
+end

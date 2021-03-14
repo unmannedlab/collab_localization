@@ -16,7 +16,7 @@ if t == 1
 else
     
     % Predict Step at 400 Hz
-    if mod(t, rate/rate_imu) == 0 && sensors(1)
+    if mod(t, rate/rate_imu) == 0
         
         accel = [acc(t,:); x_truth(4,:,t).^2 / wb.* tan(del(t,:))] ...
             + normrnd(0, imu_acc_err, [2, nCars, nSims]);
@@ -66,7 +66,7 @@ else
     end
 
     % Pacmod Step at 30 Hz
-    if mod(t, rate/rate_mdl) == 0 && sensors(2)
+    if mod(t, rate/rate_mdl) == 0 && sensors(1)
 
         z_vel = x_truth(4,:,t) + normrnd(0, enc_err, [1, nCars, nSims]);
         z_del = del(t,:) + normrnd(0, imu_mag_err, [1, nCars, nSims]);
@@ -96,7 +96,7 @@ else
     end
 
     % GPS step at 10 Hz
-    if mod(t, rate/rate_gps) == 0 && sensors(3)
+    if mod(t, rate/rate_gps) == 0 && sensors(2)
 
         z_x = x_truth(1,:,t) + normrnd(0, gps_per, [1, nCars, nSims]);
         z_y = x_truth(2,:,t) + normrnd(0, gps_per, [1, nCars, nSims]);

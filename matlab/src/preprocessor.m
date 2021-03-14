@@ -10,15 +10,15 @@ rate_uwb =   3;
 wb = 4;
 tw = 2;
 
-gps_per = 1.2       *10^SF;
-gps_her = 0.035     *10^SF;
-gps_ver = 0.05      *10^SF;
-enc_err = 0.05      *10^SF;
-str_err = 0.05      *10^SF;
-uwb_err = 0.30      *10^SF;
-imu_acc_err = 0.1   *10^SF;
-imu_gyr_err = 0.1   *10^SF;
-imu_mag_err = 0.1   *10^SF;
+gps_per = 1.2       * 10^SF;
+gps_her = 0.035     * 10^SF;
+gps_ver = 0.05      * 10^SF;
+enc_err = 0.05      * 10^SF;
+str_err = 0.05      * 10^SF;
+uwb_err = 0.30      * 10^SF;
+imu_acc_err = 0.1   * 10^SF;
+imu_gyr_err = 0.1   * 10^SF;
+imu_mag_err = 0.1   * 10^SF;
 
 nLmk = size(lmks,1);
 nTicks = length(ticks);
