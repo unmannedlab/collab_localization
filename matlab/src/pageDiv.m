@@ -1,4 +1,4 @@
-function [C] = pagediv(A,B)
+function [C] = pageDiv(A,B)
     % Check Sizes
     sz_A = size(A);
     sz_B = size(B);
