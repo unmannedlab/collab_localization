@@ -1,15 +1,16 @@
-clear; clc; 
+clear; clc;
 
 addpath('algorithms');
 addpath('input');
+addpath('figures');
 addpath('output');
 addpath('src');
 
 nSims = 10^4;
 nThreads = 10;
-EKF_rmse = zeros(3, nSims/nThreads, nThreads);
-DCL_rmse = zeros(3, nSims/nThreads, nThreads);
-CKF_rmse = zeros(3, nSims/nThreads, nThreads);
+EKF_rmse = zeros(2, nSims/nThreads, nThreads);
+DCL_rmse = zeros(2, nSims/nThreads, nThreads);
+CKF_rmse = zeros(2, nSims/nThreads, nThreads);
 
 sensors = [true, true, true];
 
@@ -24,8 +25,10 @@ parfor i = 1:nThreads
 end
 toc
 
-plt = true; 
+plt = true;
 postplot;
+in_name = 'tun';
+postsave;
 
 function [out] = fmain(nS, nT, sensors)
 
@@ -35,12 +38,12 @@ function [out] = fmain(nS, nT, sensors)
     addpath('src');
 
     nSims = nS / nT;
-    runtime = 5;
+    runtime = 20;
     SF = -0;
     plt = false;
     sve = false;
 
-    par;
+    tun;
     preprocessor;
 
     for t=1:length(ticks)

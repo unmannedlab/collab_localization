@@ -20,7 +20,6 @@ imu_acc_err = 0.1   * 10^SF;
 imu_gyr_err = 0.1   * 10^SF;
 imu_mag_err = 0.1   * 10^SF;
 
-nLmk = size(lmks,1);
 nTicks = length(ticks);
 acc = zeros(nTicks, nCars);
 del = zeros(nTicks, nCars);
