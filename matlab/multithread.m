@@ -43,7 +43,7 @@ function [out] = fmain(nS, nT, sensors)
     plt = false;
     sve = false;
 
-    tun;
+    par;
     preprocessor;
 
     for t=1:length(ticks)
