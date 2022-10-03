@@ -20,16 +20,16 @@ t_edges = t_min:t_step:t_max;
 figure(1); clf; hold on; 
 histogram(EKF_rmse(1,:), p_edges, 'Normalization','probability', 'EdgeAlpha', ea, 'FaceAlpha', fa, 'DisplayName', 'EKF');
 histogram(DCL_rmse(1,:), p_edges, 'Normalization','probability', 'EdgeAlpha', ea, 'FaceAlpha', fa, 'DisplayName', 'DCL');
-histogram(CKF_rmse(1,:), p_edges, 'Normalization','probability', 'EdgeAlpha', ea, 'FaceAlpha', fa, 'DisplayName', 'CCL');
+histogram(CKF_rmse(1,:), p_edges, 'Normalization','probability', 'EdgeAlpha', ea, 'FaceAlpha', fa, 'DisplayName', 'CKF');
 hold off;
 
 % figure(2); clf;hold on; 
 % histogram(EKF_rmse(2,:), t_edges, 'Normalization','probability', 'EdgeAlpha', ea, 'FaceAlpha', fa, 'DisplayName', 'EKF');
 % histogram(DCL_rmse(2,:), t_edges, 'Normalization','probability', 'EdgeAlpha', ea, 'FaceAlpha', fa, 'DisplayName', 'DCL');
-% histogram(CKF_rmse(2,:), t_edges, 'Normalization','probability', 'EdgeAlpha', ea, 'FaceAlpha', fa, 'DisplayName', 'CCL');
+% histogram(CKF_rmse(2,:), t_edges, 'Normalization','probability', 'EdgeAlpha', ea, 'FaceAlpha', fa, 'DisplayName', 'CKF');
 % hold off;
 
-figure(1); legend; xlabel('Position Error');
+figure(1); legend; xlabel('Position Error'); ylabel('Relative Frequency')
 % figure(2); legend; xlabel('Heading Error');
 
 clear nBins ea fa;

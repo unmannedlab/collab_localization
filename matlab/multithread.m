@@ -12,7 +12,7 @@ EKF_rmse = zeros(2, nSims/nThreads, nThreads);
 DCL_rmse = zeros(2, nSims/nThreads, nThreads);
 CKF_rmse = zeros(2, nSims/nThreads, nThreads);
 
-sensors = [true, true, true];
+sensors = [false, false, true];
 
 tic
 parfor i = 1:nThreads
@@ -27,7 +27,7 @@ toc
 
 plt = true;
 postplot;
-in_name = 'tun';
+in_name = 'par';
 postsave;
 
 function [out] = fmain(nS, nT, sensors)

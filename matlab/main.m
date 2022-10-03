@@ -5,7 +5,7 @@ addpath('input');
 addpath('output');
 addpath('src');
 
-nSims = 10^4;
+nSims = 10^3;
 runtime = 10;
 SF = -0;
 sve = false;
